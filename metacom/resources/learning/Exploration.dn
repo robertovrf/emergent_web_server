@@ -1,0 +1,10 @@
+uses data.String
+
+interface Exploration {
+	Exploration(String configs[], String ips[])
+	char[] restart()
+	char[] getNext()
+	void latestCycleResult(char result[])
+	bool isLastCycle()
+	bool visitedAllConfigs()
+}

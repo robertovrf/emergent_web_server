@@ -1,0 +1,337 @@
+// LearningCore
+//
+// This component implements the core of the Learning modules. This involves the following:
+// 1. classification algorithm
+// 2. algorithm responsible to select the  
+//
+// Author: Roberto Rodrigues Filho
+// March @ 2017
+
+// environment class
+data EnvClass {
+	Range ranges[]
+	char config[]
+}
+
+data Range {
+	dec highestValue
+	dec lowestValue
+	char dimension[]
+}
+
+data Event {
+	char name[]
+	char source[]
+	dec value
+	int count
+	DateTime startTime
+	DateTime endTime
+}
+
+data Metric {
+	char name[]
+	char source[]
+	dec value
+	int count
+	bool preferHigh
+	DateTime startTime
+	DateTime endTime
+}
+
+// exploration cycle
+data ExplCycle {
+	Event events[]
+	Metric metrics[] // there is a leading metric
+	char config[]
+}
+
+const char debugMSG[] = "[@LearningCore]"
+
+// this could use a database --- but I've decided not to...
+component provides learning.LearningCore requires io.Output out, data.IntUtil iu, learning.Exploration,
+	time.DateUtil dateUtil, data.StringUtil strUtil, data.json.JSONParser parser, data.DecUtil du, io.File {
+	
+	EnvClass latestKnowledgeInfo 	= null
+	EnvClass knowledge[] 			= null // all classes that was identified -- knowledge base?
+	ExplCycle cycle[] 				= null // values (metrics and events) that belong to a specific cycle
+	Exploration exploration 		= null
+
+	LearningCore:LearningCore(String configs[], String ips[]) {
+		exploration = new Exploration(configs, ips)
+	}
+
+	void LearningCore:exploring(char currentConfig[], char perceptionData[]) {
+		//out.println("$(debugMSG) Adding perception data to cycle $(iu.intToString(cycle.arrayLength+1))...")
+		//out.println("$(debugMSG) $(currentConfig)")
+		ExplCycle explCycle = parsePerceptionData(perceptionData)
+		explCycle.config = currentConfig
+		cycle = new ExplCycle[](cycle, explCycle)
+	}
+
+	// TODO: everytime I am running learning I am tampering with the knowledge results.
+	// the knowledge should only be updated after the last cycle.
+	// MY SOLUTION TO THIS PROBLEM IS STORE THE CONFIG AND RANGES IN A GLOBAL VARIABLE
+	// THIS GLOBAL VARIABLE WILL HOLD ONLY THE LATEST CONFIG AND RANGE AFTER CALLING EXPLOIT FUNCTION
+	// THEREFORE, WHENEVER ADDWINNINGARCH IS CALLED, IT WILL TAKE THE LATEST CONFIG AND RANGES AND 
+	// STORE THEM INTO THE KNOWLEDGE FUNCTION -- THIS SHOULD FIX THE ISSUE (:
+	void LearningCore:pushWinningArchToKNowledge() {
+		knowledge = new EnvClass[](knowledge, new EnvClass())
+		knowledge[knowledge.arrayLength-1].config = latestKnowledgeInfo.config
+		knowledge[knowledge.arrayLength-1].ranges = latestKnowledgeInfo.ranges
+	}
+
+	// this is precisely where the machine learning algorithm is implemented...
+	char[] LearningCore:exploit() {
+		if (cycle != null) {
+			//knowledge = new EnvClass[](knowledge, new EnvClass())
+			latestKnowledgeInfo = new EnvClass()
+			// first range is 
+			Range ranges[] = new Range[](new Range(0,9999999, new char[]("metrics")))
+			int bestArchPointer = 0
+			for (int pointer = 0; pointer < cycle.arrayLength; pointer++) {
+				// metrics
+				dec cycleRealMetricValue = cycle[pointer].metrics[0].value/cycle[pointer].metrics[0].count
+				if (ranges[0].lowestValue > cycleRealMetricValue) {
+					ranges[0].lowestValue = cycleRealMetricValue
+					//knowledge[knowledge.arrayLength-1].config = cycle[pointer].config
+					latestKnowledgeInfo.config = cycle[pointer].config
+				}
+				if (ranges[0].highestValue < cycleRealMetricValue) { 
+					ranges[0].highestValue = cycleRealMetricValue
+				}
+				// events
+				for (int pointer2 = 0; pointer2 < cycle[pointer].events.arrayLength; pointer2++) {
+					char dimension[] = cycle[pointer].events[pointer2].name
+					int rangePointer = INT_MAX
+					// verifies if dimension is already in ranges...
+					for (int pointer3 = 0; pointer3 < ranges.arrayLength; pointer3++) {
+						if (dimension == ranges[pointer3].dimension) { rangePointer = pointer3 }
+					}
+					if (rangePointer != INT_MAX) {
+						dec cycleRealEventValue = cycle[pointer].events[pointer2].value/cycle[pointer].events[pointer2].count
+						if (ranges[rangePointer].lowestValue > cycleRealEventValue) {
+							ranges[rangePointer].lowestValue = cycleRealEventValue
+						}
+						if (ranges[rangePointer].highestValue < cycleRealEventValue) {
+							ranges[rangePointer].highestValue = cycleRealEventValue
+						}
+					} else {
+						ranges = new Range[](ranges, new Range(cycle[pointer].events[pointer2].value,
+							cycle[pointer].events[pointer2].value, dimension))
+					}
+				}
+			}
+			cycle = null
+			//knowledge[knowledge.arrayLength-1].ranges = ranges
+			latestKnowledgeInfo.ranges = ranges
+			//out.println("$(debugMSG) Winning arch: $(knowledge[knowledge.arrayLength-1].config)")
+			//printInfoArchicture(knowledge[knowledge.arrayLength-1].config)
+			//out.println("$(debugMSG) Winning metric: $(du.decToString(latestKnowledgeInfo.ranges[0].lowestValue)) ms")
+			//out.println("$(debugMSG) Winning arch: $(latestKnowledgeInfo.config)")
+			return latestKnowledgeInfo.config
+		}
+		return null
+	}
+
+	/*void printInfoArchicture(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/http/handler/GET/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				out.println("$(debugMSG) Winning arch: $(helper[helper.arrayLength-1].string)")
+				return
+			}
+		}
+		out.println("$(debugMSG) Something bad's happened!")
+	}*/
+
+	// TODO: this might be problemetic if cycle value fits in more than one	class
+	// return the first config it fits within the range of...
+	// TODO: this needs some URGENT revision (specially when considering
+	// multiple mimetypes, etc..) -- my classification algorithm is very buggy!
+	char[] LearningCore:bestConfig(char perceptionData[]) {
+		if (knowledge == null) { return null }
+		ExplCycle explCycle = parsePerceptionData(perceptionData)
+		for (int pointer = 0; pointer < knowledge.arrayLength; pointer++) {
+			// events+1 because the first item in ranges is metrics
+			if ((explCycle.events.arrayLength+1) == knowledge[pointer].ranges.arrayLength) {
+				dec metricCycleValue = explCycle.metrics[0].value/explCycle.metrics[0].count
+				// only consider number of request handled
+				//dec metricCycleValue = explCycle.metrics[0].count
+				//out.println("$(debugMSG) $(du.decToString(metricCycleValue)) ms")
+				/*if ((explCycle.metrics[0].value >= knowledge[pointer].ranges[0].lowestValue) &&
+					(explCycle.metrics[0].value <= knowledge[pointer].ranges[0].highestValue)) {*/
+				/* a good fix for this: metricCycleValue <= knowledge[pointer].ranges[0].averageValue */
+				if (metricCycleValue <= knowledge[pointer].ranges[0].highestValue) {
+					bool isWithinRanges = true
+					for (int rangePointer = 1; rangePointer < knowledge[pointer].ranges.arrayLength; rangePointer++) {
+						int eCPointer = getExplCycleMatchingDimension(explCycle, knowledge[pointer].ranges[rangePointer].dimension)
+						if (eCPointer < INT_MAX) {
+							dec eventCycleValue = explCycle.events[eCPointer].value/explCycle.events[eCPointer].count
+							if (eventCycleValue >= knowledge[pointer].ranges[rangePointer].lowestValue) { /* is within the range */ }
+							else {
+								isWithinRanges = false
+								break
+							}
+						} else {
+							isWithinRanges = false
+							break
+						}
+						/*if ((eCPointer < INT_MAX) &&
+							(explCycle.events[eCPointer].value >= knowledge[pointer].ranges[rangePointer].lowestValue) && 
+							(explCycle.events[eCPointer].value <= knowledge[pointer].ranges[rangePointer].highestValue)) {*/
+						/* in case the metric value is lower (which can happen) the highest value might be higher ... */
+						/* a good fix for this: eventCycleValue >= knowledge[pointer].ranges[rangePointer].averageValue */
+					}
+					if (isWithinRanges) { return knowledge[pointer].config }
+				}
+			} else { /* verify next item in knowledge list */ }
+		}
+		//out.println("$(debugMSG) Did not find a class match!")
+		return null
+	}
+
+	// this function seem a bit unecessary...
+	char[] LearningCore:considerData(char currentConfig[], char perceptionData[]) {
+		if (knowledge != null) {
+			if (bestConfig(perceptionData) != null) { return LearningCore.CLASS_DETECTED }
+		}
+		return LearningCore.CONTINUE_EXPLORATION
+	}
+
+	char[] LearningCore:checkSysStatus(char perceptionData[], char currentConfig[]) {
+		char newConfig[] = null
+		if (knowledge != null) {
+			if ((newConfig = bestConfig(perceptionData)) != null) {
+				if (newConfig != currentConfig) { return newConfig }
+				return LearningCore.CONTINUE_EXPLOITATION
+			}
+		}
+		return LearningCore.TRIGGER_EXPLORATION	
+	}
+
+	char[] LearningCore:explorationRestart() {
+		return exploration.restart()
+	}
+
+	char[] LearningCore:explorationGetNext() {
+		return exploration.getNext()
+	}
+
+	bool LearningCore:explorationVisitedAllConfigs() {
+		return exploration.visitedAllConfigs()
+	}
+
+	void LearningCore:latestCycleResult(char result[]) {
+		exploration.latestCycleResult(result)
+	}
+
+	bool LearningCore:isLastCycle() {
+		return exploration.isLastCycle()
+	}
+
+	int getExplCycleMatchingDimension(ExplCycle eC, char dimension[]) {
+		for (int pointer = 0; pointer < eC.events.arrayLength; pointer++) {
+			if (eC.events[pointer].name == dimension) {
+				return pointer
+			}
+		}
+		return INT_MAX
+	}
+
+	// take the perception data and update cycle and classes
+	ExplCycle parsePerceptionData(char perceptionData[]) {
+		ExplCycle internalCycle = new ExplCycle()
+		JSONElement document = parser.parseDocument(perceptionData)
+		// metrics... TODO: a leading variable that determines whether or not a metric 
+		// is leading should be added in the JSON structure
+		JSONElement metricsJSON = parser.getValue(document, "metrics")
+		if (metricsJSON != null) {
+			for (int pointer = 0; pointer < metricsJSON.children.arrayLength; pointer++) {
+				JSONElement childrenMetrics = metricsJSON.children[pointer]
+				Metric metric = new Metric()
+				metric.name = parser.getValue(childrenMetrics, "name").value
+				metric.source = parser.getValue(childrenMetrics, "source").value
+				metric.value = du.decFromString(parser.getValue(childrenMetrics, "value").value)
+				metric.count = iu.intFromString(parser.getValue(childrenMetrics, "count").value)
+				dec metricValue = metric.value/metric.count
+				//out.println("$(debugMSG) avg: $(du.decToString(metricValue))")
+				//writeToFile("avg: $(du.decToString(metricValue))")
+				/*if (metricValue < 1) {
+					out.println("$(debugMSG) metric: $(du.decToString(metricValue)) ms")
+				}*/
+				if (parser.getValue(childrenMetrics, "preferHigh").value == "true") {
+					metric.preferHigh = true
+				} else { metric.preferHigh = false }
+				metric.startTime = parseDateFromString(parser.getValue(childrenMetrics, "startTime").value)
+				metric.endTime = parseDateFromString(parser.getValue(childrenMetrics, "endTime").value)
+				internalCycle.metrics = new Metric[](internalCycle.metrics, metric)
+				/*if ((metric.startTime != null) && (metric.endTime != null)) { internalCycle.metrics = new Metric[](internalCycle.metrics, metric) }
+				else { out.println("$(debugMSG) Metric: Collected time is NULL !!") }*/
+			}
+		}
+		// events
+		JSONElement eventsJSON = parser.getValue(document, "events")
+		if (eventsJSON != null) {
+			for (int pointer = 0; pointer < eventsJSON.children.arrayLength; pointer++) {
+				JSONElement childrenMetrics = eventsJSON.children[pointer]
+				Event eventT = new Event()
+				eventT.name = parser.getValue(childrenMetrics, "name").value
+				eventT.source = parser.getValue(childrenMetrics, "source").value
+				eventT.value = du.decFromString(parser.getValue(childrenMetrics, "value").value)
+				eventT.count = iu.intFromString(parser.getValue(childrenMetrics, "count").value)
+				eventT.startTime = parseDateFromString(parser.getValue(childrenMetrics, "startTime").value)
+				eventT.endTime = parseDateFromString(parser.getValue(childrenMetrics, "endTime").value)
+				internalCycle.events = new Event[](internalCycle.events, eventT)
+				/*if ((eventT.startTime != null) && (eventT.endTime != null))  { internalCycle.events = new Event[](internalCycle.events, eventT) }
+				else { out.println("$(debugMSG) Event: Collected time is NULL !!") }*/
+			}
+		}
+		//internalCycle.config = currentConfig
+		return internalCycle
+	}
+
+	/*void writeToFile(char someText[]) {
+		File fd = new File("result1.data", File.FILE_ACCESS_WRITE)
+        fd.setPos(fd.getSize())
+        fd.write(someText)
+        fd.write("\n")
+        fd.close()
+	}*/
+
+	// I could use the pattern as const char[] stating exactly the pattern then have a set of ifs
+	// to determine which const char the pattern fits into and then process string accordingly...
+	// TODO... think about how the pattern can be used here to help extract he info from string
+	// current pattern is 2017-3-10 16:27:3
+	// Also, take this code and put it in DateUtil
+	//DateTime parseDateFromString(char string[], char pattern[]) {
+	DateTime parseDateFromString(char string[]) {
+		if ((string == "") || (string == null)) {}
+		else {
+			DateTime result = null
+			// the way string is processed depends on pattern...
+			String helper[] = strUtil.explode(string, " ")
+			String dayStr[] = strUtil.explode(helper[0].string, "-")
+			String timeStr[] = strUtil.explode(helper[1].string, ":")
+			// creating the DateTime variable
+			result = new DateTime()
+			result.year = iu.intFromString(dayStr[0].string)
+			result.month = iu.intFromString(dayStr[1].string)
+			result.day = iu.intFromString(dayStr[2].string)
+			result.hour = iu.intFromString(timeStr[0].string)
+			result.minute = iu.intFromString(timeStr[1].string)
+			result.second = iu.intFromString(timeStr[2].string)
+			result.millisecond = 0
+			return result
+		}
+		return null
+	}
+
+	//char[] parseStringFromDate(DateTime date, char pattern[]) {
+	char[] parseStringFromDate(DateTime date) {
+		char result[] = null
+		result = new char[](iu.intToString(date.year), "-", iu.intToString(date.month), "-", iu.intToString(date.day),
+			" ", iu.intToString(date.hour), ":", iu.intToString(date.minute), ":", iu.intToString(date.second))
+		return result
+	}
+}

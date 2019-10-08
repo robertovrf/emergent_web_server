@@ -1,0 +1,81 @@
+// CacheHanlderFS.dn
+// This component implements caching with a fixed size array to store item.
+// Author: Roberto Rodrigues Filho
+// August @ 2015
+
+component provides cache.CacheHandler requires io.Output out, data.IntUtil iu {
+	static CachedData cache[]
+	static int arraySize
+	static Mutex cacheLock = new Mutex()
+
+	CachedData CacheHandler:get(char key[]) {
+		mutex(cacheLock) {
+			for (int i = 0; i < arraySize; i++) {
+				if (cache[i].key == key) { return cache[i] }
+			}
+		}
+		return null
+	}
+	
+	void CacheHandler:update(CachedData ncr) {
+		mutex(cacheLock) {
+			for (int i = 0; i < arraySize; i++) {
+				if (cache[i].key == ncr.key) {
+					cache[i].response = ncr.response
+					cache[i].resourceAge = ncr.resourceAge
+					return
+				}
+			}
+			//not found add it
+			// copy ncr content to avoid read-only exception
+			// because ncr was created on another component
+			CachedData newEntry = new CachedData()
+			newEntry.command = ncr.command
+			newEntry.key = ncr.key
+			newEntry.resourceAge = ncr.resourceAge
+			newEntry.mimeType = ncr.mimeType
+			newEntry.responseHeader = ncr.responseHeader
+			newEntry.response = ncr.response
+			newEntry.contentSize = ncr.contentSize
+			newEntry.contentType = ncr.contentType
+			if (cache == null) { cache = new CachedData[CacheHandler.MAX_SIZE]() }
+			if (arraySize == CacheHandler.MAX_SIZE) { arraySize = 0 }
+			cache[arraySize] = newEntry
+			arraySize++
+		}
+	}
+
+	void CacheHandler:delete(char key[]) {
+		mutex(cacheLock) {
+			CachedData helper[] = new CachedData[CacheHandler.MAX_SIZE]()
+			int j = 0
+			int localArraySize = arraySize
+			for (int i = 0; i < localArraySize; i++) {
+				if (key != cache[i].key) {
+					helper[j] = cache[i]
+					j++	
+				} else { arraySize-- }
+			}
+			cache = helper
+		}
+	}
+
+	String[] CacheHandler:getKeys() {
+		String keys[] = null
+		mutex(cacheLock) {
+			keys = new String[arraySize]
+			for (int i = 0; i < arraySize; i++) {
+				keys[i] = new String()
+				keys[i].string = cache[i].key
+			}	
+		}
+		return keys
+	}
+
+	void CacheHandler:clear() {
+		mutex(cacheLock) {
+			cache = null
+			arraySize = 0
+		}
+	}
+}

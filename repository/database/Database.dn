@@ -1,0 +1,11 @@
+component provides database.Database requires data.mysql.MySQL, io.Output out {
+
+	MySQLRow[] Database:execute(char query[], DBInfo info) {
+		MySQL mysql = new MySQL(info.host, 0, info.user, info.pw, info.db)
+		mysql.execute(query)
+		MySQLRow rows[] = mysql.fetchAll()
+		mysql.close()
+		return rows	
+	}
+
+}

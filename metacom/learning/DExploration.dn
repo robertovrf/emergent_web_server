@@ -1,0 +1,79 @@
+// DExploration.dn
+// Distributed Exploration
+//
+// This component implements the Exploration module.
+// 
+// Author: Roberto Rodrigues Filho
+// September @ 2018
+
+component provides learning.Exploration requires io.Output out, data.IntUtil iu, data.StringUtil strUtil {
+
+	String configList[] = null
+	
+	Exploration:Exploration(String configs[], String ips[]) {
+		configList = addDistributedConfigs(configs, ips)
+	}
+
+	char[] Exploration:restart() {
+		return null
+	}
+
+	char[] Exploration:getNext() {
+		return null
+	}
+
+	bool Exploration:visitedAllConfigs() {
+		return false
+	}
+
+	void Exploration:latestCycleResult(char result[]) {
+		/*  do nothing ... */
+	}
+
+	bool Exploration:isLastCycle() {
+		return false
+	}
+
+	/* being distributed means "distributor_proxies" */
+	bool isDistributed(char config[]) {
+		String helper[] = strUtil.explode(config, "|")
+		String comps[] = strUtil.explode(helper[0].string, ",")
+		for (int i = 0; i < comps.arrayLength; i++) {
+			if (strUtil.find(comps[i].string, "distributor_proxies") != StringUtil.NOT_FOUND) {
+				return true
+			}
+		}
+		return false
+	}
+
+	char[] getFormatedIPs(String ips[], int numIPs) {
+		char result[] = null
+		for (int i = 0; i <= numIPs; i++) {
+			if (i == 0) { result = new char[](result, ips[i].string) }
+			else { result = new char[](result, ",", ips[i].string) }
+		}
+		return result
+	}
+
+	String[] generateVariants(char config[], String ips[]) {
+		String result[] = new String[ips.arrayLength-1]()
+		for (int i = 0; i < ips.arrayLength-1; i++) {
+			result[i] = new String(new char[]("|", getFormatedIPs(ips, i+1), config))
+		}
+		return result
+	}
+
+	String[] addDistributedConfigs(String configs[], String ips[]) {
+		String result[] = null
+		String variants[] = null
+		for (int i = 0; i < configs.arrayLength; i++) {
+			if (isDistributed(configs[i].string)) {
+				variants = generateVariants(configs[i].string, ips)
+				result = new String[](result, variants)
+			} else {
+				result = new String[](result, configs[i])
+			}
+		}
+		return result	
+	}
+}

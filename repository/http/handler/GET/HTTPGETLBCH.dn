@@ -1,0 +1,16 @@
+// HTTPGETLBCH
+//
+// Processes a forwards a HTTPGET request to other servers using cache
+//
+// Author: Roberto Rodrigues Filho
+// April @ 2017
+
+const char debugMSG[] = "[@HTTPGETLBCH]"
+
+component provides http.handler.GET.HTTPGET requires io.Output out, http.util.HTTPUtil httpUtil, cache.CacheHandler ch {
+
+	void HTTPGET:handleRequest(HTTPMessage httpHeader) {
+		//TODO
+	}
+
+}

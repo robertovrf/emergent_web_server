@@ -1,0 +1,50 @@
+// RESLauncher.dn
+uses learning.DistUCB
+
+data AppInfo {
+	char className[]
+	char appName[]
+	char startCommand[]
+	char ip[]
+	int portES
+	int portProxy
+	DistUCB learning
+}
+
+data StartInfo {
+	char className[]
+	char appName[]
+	char startCommand[]
+	char ip[]
+}
+
+data AppStarted {
+	char ip[]
+	int port
+	char appName[]
+}
+
+interface RESLauncher {
+	/* HTTP responses */
+	const char OK_STATUS[] 			= "200 OK"
+	const char BADREQUEST_STATUS[] 	= "400 Bad Request"
+	const char NOTFOUND_STATUS[] 	= "404 Not Found"
+
+	/* Emergent Software Launcher constants */
+	const char CLASS_A[] = "class_a"
+	const char CLASS_B[] = "class_b"
+
+	/* Emergent Software Launcher ports */
+	const int ESLAUNCHER_PORT = 2010
+
+	/* Emergent Software Launcher rest API */
+	const char HELP[] 	= "help"
+	const char START[]	= "start"
+	const char FINISH[]	= "finish"
+	const char INFO[]	= "info"
+
+	RESLauncher(char ip[], int port)
+	AppStarted start(StartInfo startInfo)
+	bool finish(AppInfo appInfo)
+	AppInfo info(char appName[])
+}

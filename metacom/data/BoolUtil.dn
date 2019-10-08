@@ -1,0 +1,18 @@
+// January @ 2019 - This is used by some distributor proxies. 
+
+component provides data.BoolUtil {
+
+	bool BoolUtil:boolFromString(char value[]) {
+		if (value == "true") {
+			return true
+		}
+		return false
+	}
+
+	char[] BoolUtil:boolToString(bool value) {
+		if (value) {
+			return "true"
+		}
+		return "false"
+	}
+}

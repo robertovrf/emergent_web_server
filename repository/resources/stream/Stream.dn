@@ -1,0 +1,7 @@
+uses net.TCPSocket
+
+interface Stream {
+	Stream(TCPSocket socket)
+	void write(char dt[])
+	void endStream()
+}

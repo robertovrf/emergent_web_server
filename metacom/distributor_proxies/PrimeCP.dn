@@ -1,0 +1,97 @@
+const char debugMSG[] = "[@PrimeCP]"
+
+component provides prime.Prime, distributor_proxies.Proxy requires oracle.Oracle oracle,
+	oracle.Parser, net.TCPSocket, io.Output out, data.IntUtil iu, time.Calendar ic, time.DateUtil dateUtil,
+	data.StringUtil strUtil {
+
+	static Mutex infosLock 	= new Mutex()
+	static Mutex portsLock 	= new Mutex()
+	static ProxyInfo infos[]
+	static int pointer
+
+	implementation Proxy {
+		void Proxy:stop() { }
+		void Proxy:setObject(Object o) { }
+		void Proxy:start() { }
+		void Proxy:setInfo(ProxyInfo pInfo[], char myAddr[]) {
+			infos = pInfo
+		}
+	}
+	
+	implementation Prime {
+		TCPSocket remoteObj = new TCPSocket()
+
+		Response parseResponse(char content[]) {
+			Parser parser = new Parser()
+			Response response = parser.jsonToData(content, typeof(Response), null)
+			return response
+		}
+
+		Response readResponse(TCPSocket s) {
+			Response response = null
+			char buf[] = null
+			int len = 0
+			char command[] = null
+			while ((buf = s.recv(1)).arrayLength > 0) {
+				command = new char[](command, buf)
+				len++
+				//stop condition
+				if (len >= 4) {
+					if ((command[len-4] == "\r") && (command[len-3] == "\r") && 
+						(command[len-2] == "\r") && (command[len-1] == "\r")) {
+						response = parseResponse(strUtil.subString(command, 
+							0, command.arrayLength-4))
+						break
+					}
+				}
+			}
+			if (response == null) { s.disconnect() }
+			return response
+		}
+
+		bool establishConnection(ProxyInfo info) {
+			if (!remoteObj.connect(info.address, info.port)) { 
+				out.println("$(debugMSG) Connection error!")
+				return false
+			}
+			return true
+		}
+
+		Response makeRequest(char content[]) {
+			Response resp = null
+			ProxyInfo localInfo = null
+			mutex(infosLock) {
+				if (infos.arrayLength > 1) {
+					if (pointer == infos.arrayLength) { pointer = 0 }
+					localInfo = infos[pointer]
+					pointer++
+				} else { localInfo = infos[0] }
+			}
+			if (establishConnection(localInfo)) {
+				remoteObj.send(content)
+				resp = readResponse(remoteObj)
+				remoteObj.disconnect()	
+			}
+			return resp
+		}
+
+		int Prime:howManyPrimes(int number) {
+			Parser parser = new Parser()
+			Request request = new Request()
+			request.functionName = "howManyPrimes"
+			request.numParams = 1
+			char requestStr[] = parser.jsonFromData(request, null)
+			char param[] = iu.intToString(number)
+			char content[] = new char[](requestStr, "!", param, "\r\r\r\r")
+			Response response = makeRequest(content)
+			if ((response != null) && (response.status == 1)) {
+				return iu.intFromString(response.value)
+			} else { throw new Exception("Error!") }
+		}
+
+		bool Prime:isPrime(int number) {
+			out.println("$debugMSG It still in construction!!!!!")
+			return false
+		}
+	}
+}

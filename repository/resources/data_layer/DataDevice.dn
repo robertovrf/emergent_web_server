@@ -1,0 +1,7 @@
+uses data_layer.DataLayer
+
+interface DataDevice {
+	void setup(char user[], char pw[], char db[])
+	MySQLRow[] get(char query[])
+	void set(char query[])
+}

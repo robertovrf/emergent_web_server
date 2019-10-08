@@ -1,0 +1,14 @@
+uses data.mysql.MySQL
+
+data DBInfo {
+	char host[]
+	char user[]
+	char pw[]
+	char db[]
+}
+
+interface Database {
+	const int HOSTPORT = 7777
+	const char END_MSG[] = "\r\n\r\n"
+	MySQLRow[] execute(char query[], DBInfo info)
+}

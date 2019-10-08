@@ -1,0 +1,243 @@
+// ESLauncher.dn
+// 
+// This component implements the application that lauches other emergent systems.
+// This is used to launch class A and class B apps.
+//
+// Author: Roberto Rodrigues Filho
+// January @ 2019
+
+uses rest.RESLauncher
+
+const char debugMSG[] = "[@ESLauncher]"
+
+const int PORT = 2010
+
+const int MIN_BASE_PORT_ES 		= 2013
+const int MAX_BASE_PORT_ES		= 3000
+const int MIN_BASE_PORT_PROXY	= 3500
+const int MAX_BASE_PORT_PROXY	= 8000
+
+const int CALL_BACK_PORT = 2009
+
+data QueueCB {
+	char ID[]// usually proxy port
+	Thread t// thread to signal
+	bool response//return of runAppSuccessful
+}
+
+component provides App requires io.Output out, os.Run run, data.IntUtil iu,
+	data.StringUtil strUtil, net.TCPSocket, net.TCPServerSocket,
+	http.util.HTTPUtil httpUtil, data.json.JSONEncoder jsonEncoder, rest.RESys {
+
+	Mutex callbackqueue		= new Mutex()
+	QueueCB qCB[] 			= null
+	AppInfo runningApps[] 	= null
+	int basePortES 			= MIN_BASE_PORT_ES
+	int basePortProxy 		= MIN_BASE_PORT_PROXY
+
+	void sendResponse(TCPSocket client, char msg[]) {
+		client.send(msg)
+		client.disconnect()
+	}
+
+	// this is what I am expecting: 2013|y\r or 2014|n\r
+	void callback(TCPSocket s) {
+		char buf[]
+		char rawData[]
+		while ((buf = s.recv(1)).arrayLength > 0) {
+			// stop condition...
+			if (buf == "\r") {
+				mutex(callbackqueue) {
+					String helper[] = strUtil.explode(rawData, "|")
+					int pointer = searchQueue(helper[0].string)
+					if (pointer != INT_MAX) {
+						if (helper[1].string == "y") { qCB[pointer].response = true }
+						else { qCB[pointer].response = false }
+						qCB[pointer].t.signal()	
+					} else { throw new Exception("Item not found in the call back queue.") }
+				}
+				break
+			} else { rawData = new char[](rawData, buf) }
+		}
+		s.disconnect()
+	}
+
+	int searchQueue(char ID[]) {
+		mutex(callbackqueue) {
+			int pointer = INT_MAX
+			for (int i = 0; i < qCB.arrayLength; i++) {
+				if (qCB[i].ID == ID) { return i }
+			}
+			return pointer
+		}
+	}
+
+	QueueCB getQueue(char ID[]) {
+		mutex(callbackqueue) {
+			QueueCB queue = null
+			QueueCB newArray[] = null
+			for (int i = 0; i < qCB.arrayLength; i++) {
+				if (qCB[i].ID == ID) { queue = qCB[i] }
+				else { newArray = new QueueCB[](newArray, qCB[i]) }
+			}
+			qCB = newArray
+			return queue
+		}
+	}
+
+	bool runAppSuccessful(AppInfo appInfo) {
+		asynch::run.execute(new char[]("dana -sp",
+			" ../repository EmergentSys.o -p $(iu.intToString(appInfo.portES)) ", 
+			" -app $(appInfo.startCommand) -args $(iu.intToString(appInfo.portProxy))"))
+		mutex(callbackqueue) {
+			qCB = new QueueCB[](qCB, 
+				new QueueCB(iu.intToString(appInfo.portProxy),
+					this.thread, false))
+		}
+		this.thread.wait()
+		QueueCB resp = getQueue(iu.intToString(appInfo.portProxy))
+		if (resp != null) { return resp.response }
+		return false
+	}
+
+	// remember that the port of the app is the port for the EmergentSys process
+	String[] start(StartInfo startInfo) {
+		//TODO: I should test to see if the port is free
+		// creating appInfo which will trigger the app to start
+		AppInfo appInfo 		= new AppInfo()
+		appInfo.className 		= startInfo.className
+		appInfo.startCommand 	= startInfo.startCommand
+		appInfo.ip 				= startInfo.ip
+		appInfo.portES 			= basePortES
+		if (basePortES == MAX_BASE_PORT_ES) { basePortES = MIN_BASE_PORT_ES }
+		else { basePortES++ }
+		appInfo.portProxy 		= basePortProxy
+		if (basePortProxy == MAX_BASE_PORT_PROXY) { basePortProxy = MIN_BASE_PORT_PROXY }
+		else { basePortProxy++ }
+		appInfo.appName 		= startInfo.appName
+		// creating AppStarted which will be returned to the client
+		AppStarted appStarted 	= new AppStarted()
+		appStarted.ip 			= startInfo.ip
+		appStarted.port 		= appInfo.portProxy
+		appStarted.appName 		= startInfo.appName
+		if (runAppSuccessful(appInfo)) {
+			runningApps = new AppInfo[](runningApps, appInfo)
+			return new String[](new String(RESLauncher.OK_STATUS), 
+				new String(jsonEncoder.jsonFromData(appStarted, null)))	
+		}
+		return new String[](new String(RESLauncher.BADREQUEST_STATUS)) 
+	}
+
+	String[] finish(AppInfo appInfo) {
+		int appInfoPointer = INT_MAX
+		for (int i = 0; i < runningApps.arrayLength; i++) {
+			if ((runningApps[i].portProxy == appInfo.portProxy) && 
+				(runningApps[i].ip == appInfo.ip) &&
+				(runningApps[i].appName == appInfo.appName) &&
+				(runningApps[i].className == appInfo.className)) {
+				appInfoPointer = i
+				break
+			}
+		}
+		if (appInfoPointer != INT_MAX) {
+			out.println("$(debugMSG) ip: $(runningApps[appInfoPointer].ip):$(iu.intToString(runningApps[appInfoPointer].portES))")
+			RESys reSys = new RESys(runningApps[appInfoPointer].ip, runningApps[appInfoPointer].portES)
+			if (reSys.terminate()) {
+				AppInfo newRunningApps[] = null
+				for (int i = 0; i < runningApps.arrayLength; i++) {
+					if (appInfoPointer != i) {
+						newRunningApps = new AppInfo[](newRunningApps, runningApps[i])
+					}
+				}
+				runningApps = newRunningApps
+				return new String[](new String(RESLauncher.OK_STATUS))
+			}
+		}
+		return new String[](new String(RESLauncher.BADREQUEST_STATUS))
+	}
+
+	//NOTE: THIS WILL NOT WORK, since everyone in runningApps will have an appName = EmergentSys
+	//TODO: I need to update the appName to an ID which should be appName + className + portProxy?
+	String[] info(char appName[]) {
+		for (int i = 0; i < runningApps.arrayLength; i++) {
+			if (runningApps[i].appName == appName) {
+				return new String[](new String(RESLauncher.OK_STATUS), 
+					new String(jsonEncoder.jsonFromData(runningApps[i], null)))
+			}
+		}
+		return new String[](new String(RESLauncher.BADREQUEST_STATUS))
+	}
+
+	String[] parseCommand(HTTPMessage msg) {
+		if (msg.command == "POST") {
+			if (msg.resource == RESLauncher.START) { return start(jsonEncoder.jsonToData(msg.postData, 
+				typeof(StartInfo), null)) }
+			else if (msg.resource == RESLauncher.FINISH) { return finish(jsonEncoder.jsonToData(msg.postData, 
+				typeof(AppInfo), null)) }
+			else if (msg.resource == RESLauncher.INFO) { return info(msg.postData) }
+		}
+		return new String[](new String(RESLauncher.BADREQUEST_STATUS))
+	}
+
+	HTTPMessage readRequest(TCPSocket client) {
+		HTTPMessage msg = clone httpUtil.readHTTPRequest(client)
+		/* removes the htdocs path + /meta/ */
+		int start = HTTPUtil.htdocs.arrayLength + 6 // 6 = {/meta/}.arrayLength
+		if (msg.resource.arrayLength > start) {
+			int length = msg.resource.arrayLength - start
+			msg.resource = strUtil.subString(msg.resource, start, length)	
+		}
+		return msg
+	}
+
+	char[] formatHTTPResponse(String response[]) {
+		char resp[] = null
+		if (response.arrayLength > 0) {	resp = new char[]("HTTP/1.0 ", response[0].string, " \r\n")	}
+		else { resp = new char[]("HTTP/1.0 ", RESLauncher.BADREQUEST_STATUS, " \r\n") }
+		resp = new char[] (resp, "Server: ESLauncher v1\r\n", "Content-Encoding: binary\r\n")	
+		if (response.arrayLength > 1) {
+			resp = new char[](resp, "Content-Length: $(iu.intToString(response[1].string.arrayLength))\r\n")	
+		} else { resp = new char[](resp, "Content-Length: $(iu.intToString(0))\r\n") }
+		resp = new char[](resp, "Content-Type: text/json\r\n", "Access-Control-Allow-Origin: *\r\n","\r\n")
+		if (response.arrayLength > 1) { resp = new char[](resp, response[1].string) }
+		return resp
+	}
+
+	void executor(TCPSocket client) {
+		sendResponse(client, formatHTTPResponse(parseCommand(readRequest(client))))
+	}
+
+	void serverStart() {
+		TCPServerSocket host = new TCPServerSocket()
+		if (!host.bind(TCPServerSocket.ANY_ADDRESS, PORT)) {
+			out.println("Error: failed to bind master socket")
+			return
+		}
+		while (true) {
+			TCPSocket client = new TCPSocket()
+			out.println("$(debugMSG) Waiting for new requests...")
+			if (client.accept(host)) { asynch::executor(client)	}
+			out.println("$(debugMSG) Triggered thread to handle request.")
+		}
+	}
+
+	void callBackStart() {
+		TCPServerSocket host = new TCPServerSocket()
+		if (!host.bind(TCPServerSocket.ANY_ADDRESS, CALL_BACK_PORT)) {
+			out.println("Error: failed to bind master socket")
+			return
+		}
+		while (true) {
+			TCPSocket client = new TCPSocket()
+			if (client.accept(host)) { asynch::callback(client)	}
+			out.println("$(debugMSG) Got a callback.")
+		}
+	}
+
+	int App:main(AppParam params[]) {
+		out.println("$(debugMSG) Waiting to start apps...")
+		asynch::callBackStart()
+		serverStart()
+		return 0
+	}
+}

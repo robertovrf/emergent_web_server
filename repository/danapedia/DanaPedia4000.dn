@@ -1,0 +1,193 @@
+// DanaPedia.dn
+//
+// This component
+//
+// Author: Roberto Rodrigues Filho
+// April @ 2018
+
+uses data.String
+
+const char debugMSG[] = "[@DanaPedia]"
+
+component provides danapedia.DanaPedia requires data_layer.DBConnector, io.Output out, data.IntUtil iu,
+	data.StringUtil strUtil, time.Timer t, time.Calendar ic, time.DateUtil dateUtil, util.ConfigFile {
+	
+	bool started = false
+	DBConnector db = null
+
+	void setupDB() {
+		if (!started) {
+			ConfigFile configFile = new ConfigFile("../metacom/danapedia.config")
+			char user[] = configFile.getValue("db_user")
+			char pass[] = configFile.getValue("db_pass")
+			char host[] = configFile.getValue("database")
+			db = new DBConnector(user, pass, "danapedia", host)
+			started = true
+		}
+	}
+
+	void writeHeader(Stream doc) {
+		doc.write(new char[] ("<html>", "<head>", "<title>DanaPedia</title>",
+			"<link rel=\"stylesheet\" href=\"/danapedia/css/reset.css\" />",
+			"<link rel=\"stylesheet\" href=\"/danapedia/css/style.css\" />",
+			"</head>", "<body>", "<div id=\"menu\">", "<div id=\"title\">",
+			"<span id=\"title-text\"><a href=\"/danapedia\">DanaPedia</a><span>", "</div>",
+			"<ul id=\"menu-list\">", "<li>Menu: </li>",
+			"<li><a href=\"/danapedia/action_page.dn?page=create\">Create Article</a></li>",
+			"<li><a href=\"/danapedia/action_page.dn?page=list\">List Articles</a></li>",
+			"</ul>", "</div>", "<div id=\"content-body\">"))
+	}
+
+	void writeFooter(Stream doc) {
+		doc.write("</div></body></html>")
+	}
+
+	void DanaPedia:pageNotFound(Stream doc) {
+		writeHeader(doc)
+		doc.write(new char[]("<div id=\"pagenf\">",
+			"<h1 id=\"pnf\">PAGE NOT FOUND!</h1>",
+			"<img id=\"pnf-gif\" src=\"/danapedia/imgs/page-not-found.gif\" alt=\"Page not found\"/>",
+			"</div>"))
+		writeFooter(doc)
+	}
+
+	void listArticles(Stream doc) {
+		writeHeader(doc)
+		doc.write("<div id=\"list\">")
+		doc.write("<ul>")
+		MySQLRow rows[] = db.get("SELECT title, id_text FROM articles;")
+		for (int i = 0; i < rows.arrayLength; i++) {
+			doc.write(new char[]("<li><a href=\"/danapedia/action_page.dn?page=view&id=$(rows[i].fields[1].value)\">",
+				rows[i].fields[0].value,"</a></li>"))
+		}
+		doc.write("</ul></div>")
+		writeFooter(doc)
+	}
+
+	void viewArticle(HashTable hashedHTTPData, Stream doc) {
+		//DateTime dt1 = ic.getTime()
+		String idText = hashedHTTPData.get("id")
+		if ((idText.string == null) || (!strUtil.isNumeric(idText.string))) { pageNotFound(doc) }
+		else {
+			MySQLRow title[] = db.get("SELECT title FROM articles WHERE id_text = $(idText.string)")
+			MySQLRow text[] = db.get("SELECT text FROM texts WHERE id_text = $(idText.string)")
+			if ((title.arrayLength > 0) && (text.arrayLength > 0)) {
+				//DateTime dt1 = ic.getTime()
+				// 1000000000 - around 4.2 seconds processing - distribution is good
+				// 100000000 - around 400 ms processing - distribution is still good
+				// 10000000 - around 40 ms processing -
+				// no for - around 5 ms processing - distribution is not good, but not clearly bad either
+ 				for (int i = 0; i < 1000000000; i++) { } 
+				//DateTime dt2 = ic.getTime()
+				//int result = dateUtil.toMilliseconds(dateUtil.diff(dt1, dt2))
+				//out.println("$(debugMSG) Processing time: $(iu.intToString(result)) ms")
+				writeHeader(doc)
+				doc.write("<h1>$(title[0].fields[0].value)</h1>")
+				doc.write("<p>$(text[0].fields[0].value)</p>")
+				doc.write("<a href=\"/danapedia/action_page.dn?page=edit&id=$(idText.string)\">Edit</a>")
+				writeFooter(doc)
+			} else { pageNotFound(doc) }
+		}
+		//DateTime dt2 = ic.getTime()
+		//int result = dateUtil.toMilliseconds(dateUtil.diff(dt1, dt2))
+		//out.println("$(debugMSG) Processing time: $(iu.intToString(result)) ms")
+	}
+
+	void createArticles(HashTable hashedHTTPData, Stream doc) {
+		writeHeader(doc)
+		doc.write(new char[]("<form method=\"GET\" action=\"/danapedia/action_page.dn?page=create\"",
+			" id=\"article-form\">", "<fieldset>", "<legend>Articles:</legend>",
+			"<input type=\"text\" name=\"article-title\"><br>",
+			"<textarea rows=\"4\" cols=\"50\" name=\"article-text\" form=\"article-form\"></textarea><br>",
+			"<input type=\"submit\" value=\"Submit\">",	"</fieldset>", "</form>"))
+		writeFooter(doc)
+	}
+
+	// how to guarantee one single thread of execution and not have race conditions...
+	// this is guaranteed by having a thread lock in the DCHandler component
+	// the complications come when multiple instances of the WS accessing the cluser of DB
+	// race conditions might certainly happen in this context... How can we prevent this kind of behaviour?
+	void editArticle(HashTable hashedHTTPData, Stream doc) {
+		String articleTitle = hashedHTTPData.get("article-title")
+		String idText = hashedHTTPData.get("id")
+		if (articleTitle == null) {
+			if ((idText.string == null) || (!strUtil.isNumeric(idText.string))) { pageNotFound(doc) }
+			else {
+				MySQLRow title[] = db.get("SELECT title FROM articles WHERE id_text = $(idText.string)")
+				MySQLRow text[] = db.get("SELECT text FROM texts WHERE id_text = $(idText.string)")
+				if ((title.arrayLength > 0) && (text.arrayLength > 0)) {
+					writeHeader(doc)
+					doc.write(new char[]("<form method=\"POST\" action=\"/danapedia/action_page.dn",
+						"?page=edit&id=$(idText.string)\"",
+						" id=\"article-form\">", "<fieldset>","<legend>Articles:</legend>",
+						"<input type=\"text\" name=\"article-title\" value=\"$(title[0].fields[0].value)\"><br>",
+						"<textarea rows=\"4\" cols=\"50\" name=\"article-text\" form=\"article-form\">",
+						"$(text[0].fields[0].value)</textarea><br>","<input type=\"submit\" value=\"Submit\">",
+						"</fieldset>", "</form>"))
+					writeFooter(doc)
+				} else { pageNotFound(doc) }
+			}	
+		} else {
+			String articleText = hashedHTTPData.get("article-text")
+			if (articleText == null) {
+				writeHeader(doc)
+				doc.write("<h1> Article was not edited! Something went wrong! </h1>")
+				writeFooter(doc)
+			} else {
+				//verify if the text has been updated...
+				MySQLRow textInDB[] = db.get("SELECT text FROM texts WHERE text = \"$(articleText.string)\" ")
+				MySQLRow titleInDB[] = db.get("SELECT title FROM articles WHERE title = \"$(articleTitle.string)\" ")
+				MySQLRow textID[]
+				MySQLRow articleID[]
+				if ((textInDB.arrayLength != 0) && (titleInDB.arrayLength !=  0)) {
+					writeHeader(doc)
+					doc.write("<h1> THERE WERE NO CHANGES IN TITLE NOR TEXT! </h1>")
+					writeFooter(doc)
+				} else if ((textInDB.arrayLength == 0) && (titleInDB.arrayLength ==  0)) {
+					// do the editing...
+					db.set("UPDATE texts SET current = FALSE WHERE id_text = $(idText.string);")
+					db.set("INSERT INTO texts (text, current, saved_date) VALUE (\"$(articleText.string)\", TRUE, NOW());")
+					articleID = db.get("SELECT id_article FROM articles WHERE id_text = $(idText.string);")
+					textID = db.get("SELECT id_text FROM texts WHERE text = \"$(articleText.string)\";")
+					db.set(new char[]("UPDATE articles SET id_text = $(textID[0].fields[0].value), title = '$(articleTitle.string)'",
+						" WHERE id_article = $(articleID[0].fields[0].value);"))
+					db.set("UPDATE texts SET id_article = $(articleID[0].fields[0].value) WHERE id_text = $(textID[0].fields[0].value);")
+					writeHeader(doc)
+					doc.write("<h1> Article edited successfully! </h1>")
+					writeFooter(doc)
+				} else if ((textInDB.arrayLength != 0) && (titleInDB.arrayLength ==  0)) {
+					articleID = db.get("SELECT id_article FROM articles WHERE id_text = $(idText.string);")
+					db.set(new char[]("UPDATE articles SET title = '$(articleTitle.string)'",
+						" WHERE id_article = $(articleID[0].fields[0].value);"))
+					writeHeader(doc)
+					doc.write("<h1> Article edited successfully! </h1>")
+					writeFooter(doc)
+				} else if ((textInDB.arrayLength == 0) && (titleInDB.arrayLength !=  0)) {
+					db.set("UPDATE texts SET current = FALSE WHERE id_text = $(idText.string);")
+					db.set("INSERT INTO texts (text, current, saved_date) VALUE (\"$(articleText.string)\", TRUE, NOW());")
+					articleID = db.get("SELECT id_article FROM articles WHERE id_text = $(idText.string);")
+					textID = db.get("SELECT id_text FROM texts WHERE text = \"$(articleText.string)\";")
+					db.set(new char[]("UPDATE articles SET id_text = $(textID[0].fields[0].value)",
+						" WHERE id_article = $(articleID[0].fields[0].value);"))
+					db.set("UPDATE texts SET id_article = $(articleID[0].fields[0].value) WHERE id_text = $(textID[0].fields[0].value);")
+					writeHeader(doc)
+					doc.write("<h1> Article edited successfully! </h1>")
+					writeFooter(doc)
+				}
+			}
+		}
+	}
+
+	void DanaPedia:action(HashTable hashedHTTPData, Stream doc) {
+		setupDB()
+		String page = null
+		if (hashedHTTPData != null) { page = hashedHTTPData.get("page")	}
+		if (page != null) { 
+			if (page.string == "list") { listArticles(doc) }
+			else if (page.string == "view") { viewArticle(hashedHTTPData, doc) }
+			else if (page.string == "create") { createArticles(hashedHTTPData, doc) }
+			else if (page.string == "edit") { editArticle(hashedHTTPData, doc) }
+			else { pageNotFound(doc) }
+		} else { pageNotFound(doc) }
+	}
+}

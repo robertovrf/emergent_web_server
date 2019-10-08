@@ -1,0 +1,29 @@
+data Param {
+	char value[]
+}
+
+data Request {
+	char functionName[]
+	int numParams
+	Param params[]
+}
+
+data Response {
+	// 1 OK - 2 FAILED
+	byte status 
+	// if it's null or "" this has to be translated to null
+	char value[]
+}
+
+data ProxyInfo {
+	char address[]
+	int port
+}
+
+interface Proxy {
+	void stop()
+	void setObject(Object o)
+	//void setInfo(ProxyInfo pInfo)
+	void setInfo(ProxyInfo pInfo[], char myAddr[])
+	void start()
+}

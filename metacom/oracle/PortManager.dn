@@ -1,0 +1,54 @@
+component provides oracle.PortManager requires io.Output out {
+	static int portNum = 0
+	static int firstPort = 0
+	static Mutex portLock = null
+	char myAddress[] = null
+
+	void PortManager:setInfo(int newPortNum, char localAddress[]) {
+		// after the first time you set the portNum and the localAddress 
+		// you do not have to set it again --- actually, if you set it again
+		// the system will break, because it will try to bind the socket to an
+		// already in-use port and will throw an exception.
+		// in other words: only set these attributes once
+		if ((portNum == 0) && (firstPort == 0) && (myAddress == null)) {
+			if (localAddress != null) { myAddress = localAddress }
+			if (newPortNum != 0) {
+				portNum = newPortNum
+				firstPort = newPortNum
+			}
+		}
+		if (portLock == null) { portLock = new Mutex() }
+	}
+
+	// I've increase the number of ports... the chance to accidently
+	// use a port that is being used increases..
+	// we should try to list and avoid the main ports
+	ProxyInfo[] PortManager:generatePorts(int num) {
+		mutex(portLock) {
+			ProxyInfo genInfos[] = new ProxyInfo[num]
+			for (int i = 0; i < num; i++) {
+				genInfos[i] = new ProxyInfo()
+				genInfos[i].address = myAddress
+				genInfos[i].port = portNum
+				portNum++
+				if (portNum == 3306) {
+					portNum ++
+					out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> HIT 3306")
+				} // MySQL port
+				if (portNum == 3500) { 
+					portNum = 6000
+					out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> HIT 3500")
+				}
+				if (portNum == 40000) {
+					portNum = firstPort
+					out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> HIT 40000")
+				}
+			}
+			return genInfos
+		}
+	}
+
+	char[] PortManager:getLocalAddress() {
+		return myAddress
+	}
+}

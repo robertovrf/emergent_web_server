@@ -1,0 +1,7 @@
+uses data.adt.HashTable
+uses stream.Stream
+
+interface ActionPage {
+	void get(HashTable hashedHTTPData, Stream doc)
+	void post(HashTable hashedHTTPData, Stream doc)
+}

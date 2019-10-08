@@ -1,0 +1,7 @@
+uses database.Database
+
+interface DBConnector {
+	DBConnector(char user[], char pw[], char db[], char host[])
+	MySQLRow[] get(char query[])
+	void set(char query[])
+}

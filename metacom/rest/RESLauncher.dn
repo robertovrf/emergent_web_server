@@ -1,0 +1,57 @@
+// RESLauncher.dn
+// Author: Roberto Rodrigues Filho
+
+const char debugMSG[] = "[@RESLauncher]"
+const char END_OF_STR[] 		= "\r\n\r\n"
+
+component provides rest.RESLauncher requires io.Output out, data.IntUtil iu, net.TCPSocket, 
+	http.util.HTTPUtil httpUtil, data.json.JSONEncoder jsonEncoder {
+
+	char SYSTEM_IP[] = ""
+	int SYSTEM_PORT = 0
+
+	RESLauncher:RESLauncher(char ip[], int port) {
+		SYSTEM_IP 	= ip
+		SYSTEM_PORT = port
+	}
+
+	AppStarted RESLauncher:start(StartInfo startInfo) {
+		char payload[] = jsonEncoder.jsonFromData(startInfo, null)
+		HTTPMessage msg = makeRequest("POST", RESLauncher.START, payload)
+		if (msg.status == 200) { return jsonEncoder.jsonToData(msg.postData, typeof(AppStarted), null) }
+		return null
+	}
+
+	bool RESLauncher:finish(AppInfo appInfo) {
+		char payload[] = jsonEncoder.jsonFromData(appInfo, null)
+		HTTPMessage msg = makeRequest("POST", RESLauncher.FINISH, payload)
+		if (msg.status == 200) { return true }
+		return false	
+	}
+
+	AppInfo RESLauncher:info(char appName[]) {
+		char payload[] = appName
+		HTTPMessage msg = makeRequest("POST", RESLauncher.INFO, payload)
+		if (msg.status == 200) { return jsonEncoder.jsonToData(msg.postData, typeof(AppInfo), null) }
+		return null
+	}
+
+	HTTPMessage makeRequest(char method[], char url[], char payload[]) {
+		char req[] 	= ""
+		if (method == "GET") { req = new char[]("GET /meta/", url, " HTTP/1.0", END_OF_STR) }
+		else if (method == "POST") {
+			req = new char[]("POST /meta/", url, " HTTP/1.0\r\n", "Content-Length: ",
+				iu.intToString(payload.arrayLength), END_OF_STR, payload)
+		}
+		return request(req)
+	}
+
+	HTTPMessage request(char req[]) {
+		TCPSocket s = new TCPSocket()
+		s.connect(SYSTEM_IP, SYSTEM_PORT)
+		s.send(req)
+		HTTPMessage msg = httpUtil.readHTTPRequest(s)
+		s.disconnect()
+		return msg
+	}
+}

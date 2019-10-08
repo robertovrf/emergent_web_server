@@ -1,0 +1,185 @@
+[@InteractivePerception] HTTPGETCH.o:
+[@InteractivePerception] mValue: 92.0
+[@InteractivePerception] mCount: 1633
+[@InteractivePerception] avg: 0.0563380281690140845
+[@InteractivePerception] eventCount: 1633
+[@InteractivePerception] startTime: 2017-7-19 18:50:56
+[@InteractivePerception] endTime: 2017-7-19 18:51:1
+
+
+[@InteractivePerception] HTTPGETCMP.o:
+[@InteractivePerception] mValue: 1394.0
+[@InteractivePerception] mCount: 1882
+[@InteractivePerception] avg: 0.7407013815090329436
+[@InteractivePerception] eventCount: 1882
+[@InteractivePerception] startTime: 2017-7-19 18:51:1
+[@InteractivePerception] endTime: 2017-7-19 18:51:6
+
+
+[@InteractivePerception] HTTPGET.o:
+[@InteractivePerception] mValue: 1088.0
+[@InteractivePerception] mCount: 1597
+[@InteractivePerception] avg: 0.6812773951158422041
+[@InteractivePerception] eventCount: 1597
+[@InteractivePerception] startTime: 2017-7-19 18:51:7
+[@InteractivePerception] endTime: 2017-7-19 18:51:12
+
+
+[@InteractivePerception] HTTPGETCHCMP.o:
+[@InteractivePerception] mValue: 99.0
+[@InteractivePerception] mCount: 2331
+[@InteractivePerception] avg: 0.042471042471042471
+[@InteractivePerception] eventCount: 2331
+[@InteractivePerception] startTime: 2017-7-19 18:51:12
+[@InteractivePerception] endTime: 2017-7-19 18:51:17
+
+
+[@InteractivePerception] ---- end round 1 ----
+[@InteractivePerception] HTTPGETCH.o:
+[@InteractivePerception] mValue: 89.0
+[@InteractivePerception] mCount: 1912
+[@InteractivePerception] avg: 0.0465481171548117154
+[@InteractivePerception] eventCount: 1912
+[@InteractivePerception] startTime: 2017-7-19 18:51:18
+[@InteractivePerception] endTime: 2017-7-19 18:51:23
+
+
+[@InteractivePerception] HTTPGETCMP.o:
+[@InteractivePerception] mValue: 1203.0
+[@InteractivePerception] mCount: 1908
+[@InteractivePerception] avg: 0.6305031446540880503
+[@InteractivePerception] eventCount: 1908
+[@InteractivePerception] startTime: 2017-7-19 18:51:23
+[@InteractivePerception] endTime: 2017-7-19 18:51:28
+
+
+[@InteractivePerception] HTTPGET.o:
+[@InteractivePerception] mValue: 1294.0
+[@InteractivePerception] mCount: 1577
+[@InteractivePerception] avg: 0.8205453392517438173
+[@InteractivePerception] eventCount: 1577
+[@InteractivePerception] startTime: 2017-7-19 18:51:29
+[@InteractivePerception] endTime: 2017-7-19 18:51:34
+
+
+[@InteractivePerception] HTTPGETCHCMP.o:
+[@InteractivePerception] mValue: 102.0
+[@InteractivePerception] mCount: 2331
+[@InteractivePerception] avg: 0.043758043758043758
+[@InteractivePerception] eventCount: 2331
+[@InteractivePerception] startTime: 2017-7-19 18:51:35
+[@InteractivePerception] endTime: 2017-7-19 18:51:40
+
+
+[@InteractivePerception] ---- end round 2 ----
+[@InteractivePerception] HTTPGETCH.o:
+[@InteractivePerception] mValue: 85.0
+[@InteractivePerception] mCount: 1896
+[@InteractivePerception] avg: 0.0448312236286919831
+[@InteractivePerception] eventCount: 1896
+[@InteractivePerception] startTime: 2017-7-19 18:51:40
+[@InteractivePerception] endTime: 2017-7-19 18:51:45
+
+
+[@InteractivePerception] HTTPGETCMP.o:
+[@InteractivePerception] mValue: 986.0
+[@InteractivePerception] mCount: 1939
+[@InteractivePerception] avg: 0.5085095410005157297
+[@InteractivePerception] eventCount: 1939
+[@InteractivePerception] startTime: 2017-7-19 18:51:46
+[@InteractivePerception] endTime: 2017-7-19 18:51:51
+
+
+[@InteractivePerception] HTTPGET.o:
+[@InteractivePerception] mValue: 1292.0
+[@InteractivePerception] mCount: 1454
+[@InteractivePerception] avg: 0.8885832187070151306
+[@InteractivePerception] eventCount: 1454
+[@InteractivePerception] startTime: 2017-7-19 18:51:51
+[@InteractivePerception] endTime: 2017-7-19 18:51:56
+
+
+[@InteractivePerception] HTTPGETCHCMP.o:
+[@InteractivePerception] mValue: 119.0
+[@InteractivePerception] mCount: 2196
+[@InteractivePerception] avg: 0.0541894353369763205
+[@InteractivePerception] eventCount: 2196
+[@InteractivePerception] startTime: 2017-7-19 18:51:57
+[@InteractivePerception] endTime: 2017-7-19 18:52:2
+
+
+[@InteractivePerception] ---- end round 3 ----
+[@InteractivePerception] HTTPGETCH.o:
+[@InteractivePerception] mValue: 103.0
+[@InteractivePerception] mCount: 1897
+[@InteractivePerception] avg: 0.0542962572482867685
+[@InteractivePerception] eventCount: 1896
+[@InteractivePerception] startTime: 2017-7-19 18:52:3
+[@InteractivePerception] endTime: 2017-7-19 18:52:8
+
+
+[@InteractivePerception] HTTPGETCMP.o:
+[@InteractivePerception] mValue: 1161.0
+[@InteractivePerception] mCount: 1890
+[@InteractivePerception] avg: 0.6142857142857142857
+[@InteractivePerception] eventCount: 1890
+[@InteractivePerception] startTime: 2017-7-19 18:52:8
+[@InteractivePerception] endTime: 2017-7-19 18:52:13
+
+
+[@InteractivePerception] HTTPGET.o:
+[@InteractivePerception] mValue: 984.0
+[@InteractivePerception] mCount: 1578
+[@InteractivePerception] avg: 0.6235741444866920152
+[@InteractivePerception] eventCount: 1578
+[@InteractivePerception] startTime: 2017-7-19 18:52:14
+[@InteractivePerception] endTime: 2017-7-19 18:52:19
+
+
+[@InteractivePerception] HTTPGETCHCMP.o:
+[@InteractivePerception] mValue: 116.0
+[@InteractivePerception] mCount: 2082
+[@InteractivePerception] avg: 0.0557156580211335254
+[@InteractivePerception] eventCount: 2082
+[@InteractivePerception] startTime: 2017-7-19 18:52:19
+[@InteractivePerception] endTime: 2017-7-19 18:52:24
+
+
+[@InteractivePerception] ---- end round 4 ----
+[@InteractivePerception] HTTPGETCH.o:
+[@InteractivePerception] mValue: 98.0
+[@InteractivePerception] mCount: 1663
+[@InteractivePerception] avg: 0.0589296452194828622
+[@InteractivePerception] eventCount: 1663
+[@InteractivePerception] startTime: 2017-7-19 18:52:25
+[@InteractivePerception] endTime: 2017-7-19 18:52:30
+
+
+[@InteractivePerception] HTTPGETCMP.o:
+[@InteractivePerception] mValue: 1117.0
+[@InteractivePerception] mCount: 1894
+[@InteractivePerception] avg: 0.5897571277719112988
+[@InteractivePerception] eventCount: 1894
+[@InteractivePerception] startTime: 2017-7-19 18:52:30
+[@InteractivePerception] endTime: 2017-7-19 18:52:35
+
+
+[@InteractivePerception] HTTPGET.o:
+[@InteractivePerception] mValue: 1157.0
+[@InteractivePerception] mCount: 1591
+[@InteractivePerception] avg: 0.7272155876807039597
+[@InteractivePerception] eventCount: 1591
+[@InteractivePerception] startTime: 2017-7-19 18:52:36
+[@InteractivePerception] endTime: 2017-7-19 18:52:41
+
+
+[@InteractivePerception] HTTPGETCHCMP.o:
+[@InteractivePerception] mValue: 101.0
+[@InteractivePerception] mCount: 2299
+[@InteractivePerception] avg: 0.0439321444106133101
+[@InteractivePerception] eventCount: 2299
+[@InteractivePerception] startTime: 2017-7-19 18:52:42
+[@InteractivePerception] endTime: 2017-7-19 18:52:47
+
+
+[@InteractivePerception] ---- end round 5 ----

@@ -1,0 +1,34 @@
+// make
+// This program compiles the distributed web platform as according to configuration files.
+// Author: Roberto Rodrigues Filho
+// July @ 2019
+const char debugMSG[] = "[@make]"
+
+component provides App requires io.Output out, data.IntUtil iu, util.ConfigFile, os.Run run, data.StringUtil strUtil {
+
+	int App:main(AppParam params[]) {
+		if (params.arrayLength == 0) {
+			out.println("$(debugMSG) ERROR: Run 'dana make.o configfile.config'")
+			return 1
+		}
+		out.println("$(debugMSG) Repository compilation process started.")
+		RunStatus rS = run.execute("dnc metacom/. -sp \"repository;metacom\" -v")
+		if (rS.executed) {
+			rS = run.execute("dnc repository/. -sp \"repository;metacom\" -v")
+			if (rS.executed) {
+				out.println("$(debugMSG) Repository compilation process finished.")
+				out.println("$(debugMSG) Filtering components according to config file...")
+				ConfigFile cFile = new ConfigFile(params[0].string)
+				char compListStr[] = cFile.getValue("components")
+				String comps[] = strUtil.explode(compListStr, ",")
+				char comp[] = null
+				for (int i = 0; i < comps.arrayLength; i++) {
+					comp = strUtil.trim(comps[i].string)
+					RunStatus rS2 = run.execute("rm $(comp)")
+					if (rS2.executed) {	out.println("$(debugMSG) $(comp) deleted!") }
+				}
+			}
+		}
+		return 0
+	}
+}

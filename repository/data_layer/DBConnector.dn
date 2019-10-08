@@ -1,0 +1,21 @@
+
+component provides data_layer.DBConnector requires io.Output out, database.Database dbComp {
+	// add the semantic interfaces...	
+	DBInfo dbInfo = null
+	
+	DBConnector:DBConnector(char user[], char pw[], char db[], char host[]) {
+		if (dbInfo == null) { dbInfo = new DBInfo()	}
+		dbInfo.user = user
+		dbInfo.pw = pw
+		dbInfo.db = db
+		dbInfo.host = host
+	}
+
+	MySQLRow[] DBConnector:get(char query[]) {
+		return dbComp.execute(query, dbInfo)
+	}
+
+	void DBConnector:set(char query[]) {
+		dbComp.execute(query, dbInfo)
+	}
+}

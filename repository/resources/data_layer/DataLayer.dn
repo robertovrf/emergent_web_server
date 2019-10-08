@@ -1,0 +1,7 @@
+uses database.Database
+
+interface DataLayer {
+	void setup(char user[], char pw[], char db[])
+	MySQLRow[] get(char query[])
+	void set(char query[])
+}

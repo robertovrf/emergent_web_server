@@ -1,0 +1,12 @@
+data MCContent {
+	char command[]
+	char key[] 
+	char value[]
+}
+
+interface MCClient {
+	MCContent get(char key[])
+	void put(MCContent content)
+	void update(MCContent content)
+	void delete(char key[])
+}

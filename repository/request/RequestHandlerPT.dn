@@ -1,0 +1,101 @@
+// RequestHandler
+//
+// Allocates requests to threads in a pool of threads.
+// Changed and extended from Barry Porter's version.
+//
+// Author: Roberto Rodrigues Filho
+// February @ 2017
+
+data WorkItem {
+	TCPSocket client
+	WorkItem next
+}
+
+data WorkerThread {
+	Thread thread
+	Mutex workLock
+	WorkItem work
+	WorkItem lastWork
+	int workCount
+	WorkerThread next
+}
+
+const char debugMSG[] = "[@RequestHandlerPT]"
+const int NUM_THREADS = 10
+
+component provides request.RequestHandler(Destructor) requires io.Output out, data.IntUtil iu, app_protocols.AppProtocol appProtocol {
+	bool setupDone
+	WorkerThread workers
+	WorkerThread lastWorker
+	WorkerThread lastUsedWorker
+	bool destroying
+
+	void processStream(TCPSocket s) {
+		appProtocol.processRequest(s)
+	}
+
+	void workerThread(WorkerThread state) {
+		while (true) {
+			// Roberto added this...
+			if (state.workCount == 0) {	this.thread.wait() }
+			if (state.workCount != 0) {
+				WorkItem w = state.work
+				mutex(state.workLock) {
+					w = state.work // Roberto: why twice?
+					state.work = w.next
+					if (state.work == null) { state.lastWork = null }
+					state.workCount --
+				}
+				processStream(w.client)
+			}
+			if (destroying && state.workCount == 0) { break }
+		}
+	}
+	
+	void setup() {
+		if (!setupDone) {
+			for (int i = 0; i < NUM_THREADS; i++) {
+				WorkerThread nwt = new WorkerThread()
+				nwt.workLock = new Mutex()
+				nwt.thread = asynch::workerThread(nwt)
+				if (lastWorker == null) { workers = nwt }
+				else { lastWorker.next = nwt }
+				lastWorker = nwt
+			}
+			setupDone = true
+		}
+	}
+	
+	//TODO: decide on the policy to assign a WorkItem to a worker thread
+	WorkerThread getWorkerFor(TCPSocket s) {
+		if (lastUsedWorker == null) { lastUsedWorker = workers }
+		WorkerThread result = lastUsedWorker
+		lastUsedWorker = lastUsedWorker.next
+		return result
+	}
+	
+	void RequestHandler:handleRequest(TCPSocket s) {
+		setup()
+		WorkItem nwi = new WorkItem(s)
+		WorkerThread wt = getWorkerFor(s)
+		mutex(wt.workLock) {
+			if (wt.lastWork == null) { wt.work = nwi }
+			else { wt.lastWork.next = nwi }	
+			wt.lastWork = nwi
+			wt.workCount ++
+		}
+		wt.thread.signal()
+	}
+
+	void Destructor:destroy() {
+		WorkerThread wt = workers
+		destroying = true
+		for (int i = 0; i < 10; i++) {
+			if (wt != null) {
+				wt.thread.signal()
+				wt.thread.join()
+				wt = wt.next
+			} else { break }
+		}
+  	}
+}

@@ -1,0 +1,10 @@
+component provides web_app.Dispatcher requires io.Output out, danapedia.DanaPedia danaPedia, stream.Stream {
+	
+	void Dispatcher:process(char resource[], char method[], HashTable hashedHTTPData, TCPSocket socket) {
+		Stream doc = new Stream(socket)
+		if (resource == "danapedia/action_page.dn") {
+			danaPedia.action(hashedHTTPData, doc)
+		} else { danaPedia.pageNotFound(doc) }
+		doc.endStream()
+	}
+}

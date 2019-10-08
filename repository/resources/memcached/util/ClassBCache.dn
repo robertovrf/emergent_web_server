@@ -1,0 +1,22 @@
+uses memcached.util.MCClient
+uses distributor_proxies.Proxy
+uses data.String
+
+data ClassBRequest {
+	char address[]
+	int port //port to notify
+}
+
+data ClassBResponse {
+	String ipList[]
+	char componentName[]
+}
+
+interface ClassBCache {
+	void setInfo(ProxyInfo info[])
+	void test()
+	MCContent get(char key[])
+	void put(MCContent content)
+	void update(MCContent content)
+	void delete(char key[])
+}

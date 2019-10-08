@@ -1,0 +1,25 @@
+uses data.String
+
+interface LearningCore {
+	// follw up actions
+	const char CLASS_DETECTED[] 		= "class_detected"
+	const char CONTINUE_EXPLORATION[] 	= "continue_exploration"
+	const char TRIGGER_EXPLORATION[] 	= "trigger_exploration"
+	const char CONTINUE_EXPLOITATION[] 	= "continue_exploitation"
+
+	LearningCore(String configs[], String ips[])
+	void exploring(char currentConfig[], char perceptionData[])
+	char[] exploit()// returns process exploring data and get bestConfig
+	// the exploit function should always be called after some exploring function calls
+	char[] bestConfig(char perceptionData[]) // returns best config for a previously seen class
+	char[] considerData(char currentConfig[], char perceptionData[]) // this returns a follow up action 
+	// (whether a class was detected or the need to keep exploring)
+	char[] checkSysStatus(char perceptionData[], char currentConfig[])
+	// return follow up action -- triggers exploration or continues exploitation
+	char[] explorationRestart()
+	char[] explorationGetNext()
+	bool explorationVisitedAllConfigs()
+	void latestCycleResult(char result[])
+	bool isLastCycle()
+	void pushWinningArchToKNowledge()
+}

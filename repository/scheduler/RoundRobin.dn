@@ -1,0 +1,26 @@
+const char debugMSG[] = "[@RoundRobin]"
+
+component provides scheduler.Scheduler requires io.Output out, data.IntUtil iu,
+	net.TCPSocket, scheduler.SchedulerUtil scdUtil {
+
+	Mutex lock = new Mutex()
+	int pController = 0// pointer controller - points to the next server
+	int numServers = 0
+
+	TCPSocket Scheduler:getServer(HTTPMessage httpHeader) {
+		ServerInfo sI
+		mutex(lock) {
+			numServers = scdUtil.getNumServers()
+			if (numServers == 0) { return null }
+			sI = scdUtil.getServer(pController)
+			pController++
+			if (pController == numServers) { pController = 0 }
+		}
+		TCPSocket server = new TCPSocket()
+		if (!server.connect(sI.ip, sI.port)) {
+			out.println("$(debugMSG) ERROR! Fails to connect to $(sI.ip) - $(iu.intToString(sI.port))")
+			return null
+		}
+		return server
+	}
+}

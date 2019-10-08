@@ -1,0 +1,85 @@
+chsmall text 100 threads.
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGET.o,/home/roberto/dana/components/io/File.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,6:File:7,4:HTTPUtil:8,8:FileSystem:7,8:StringUtil:9,9:List:10|
+
+value: 438.0 | count: 400 | avg: 1.095
+
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGETLB.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/io/File.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o,../repository/scheduler/RoundRobin.o,../repository/scheduler/SchedulerUtil.o,/home/roberto/dana/components/util/ConfigFile.o,/home/roberto/dana/components/io/TextFile.o,/home/roberto/dana/components/data/adt/HashTable.o,./external_references/autogen/ER3.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,4:HTTPUtil:7,7:FileSystem:8,7:StringUtil:9,9:List:10,6:HTTPUtil:7,6:Scheduler:11,11:TCPSocket:1,11:SchedulerUtil:12,12:FileSystem:8,12:ConfigFile:13,13:TextFile:14,14:File:8,13:StringUtil:9,13:HashTable:15,12:ER:16,6:StringUtil:9|
+
+value: 2007.0 | count: 400 | avg: 5.0175
+
+-----------------------------------------
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGET.o,/home/roberto/dana/components/io/File.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,6:File:7,4:HTTPUtil:8,8:FileSystem:7,8:StringUtil:9,9:List:10|
+
+value: 515.0 | count: 400 | avg: 1.2875
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGETLB.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/io/File.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o,../repository/scheduler/RoundRobin.o,../repository/scheduler/SchedulerUtil.o,/home/roberto/dana/components/util/ConfigFile.o,/home/roberto/dana/components/io/TextFile.o,/home/roberto/dana/components/data/adt/HashTable.o,./external_references/autogen/ER3.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,4:HTTPUtil:7,7:FileSystem:8,7:StringUtil:9,9:List:10,6:HTTPUtil:7,6:Scheduler:11,11:TCPSocket:1,11:SchedulerUtil:12,12:FileSystem:8,12:ConfigFile:13,13:TextFile:14,14:File:8,13:StringUtil:9,13:HashTable:15,12:ER:16,6:StringUtil:9|
+
+value: 699.0 | count: 192 | avg: 3.640625
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+medium image (med_image) --- 100 threads
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGET.o,/home/roberto/dana/components/io/File.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,6:File:7,4:HTTPUtil:8,8:FileSystem:7,8:StringUtil:9,9:List:10|
+
+value: 84.0 | count: 270 | avg: 0.3111111111111111111
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGETLB.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/io/File.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o,../repository/scheduler/RoundRobin.o,../repository/scheduler/SchedulerUtil.o,/home/roberto/dana/components/util/ConfigFile.o,/home/roberto/dana/components/io/TextFile.o,/home/roberto/dana/components/data/adt/HashTable.o,./external_references/autogen/ER3.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,4:HTTPUtil:7,7:FileSystem:8,7:StringUtil:9,9:List:10,6:HTTPUtil:7,6:Scheduler:11,11:TCPSocket:1,11:SchedulerUtil:12,12:FileSystem:8,12:ConfigFile:13,13:TextFile:14,14:File:8,13:StringUtil:9,13:HashTable:15,12:ER:16,6:StringUtil:9|
+
+value: 1667.0 | count: 360 | avg: 4.6305555555555555555
+
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGET.o,/home/roberto/dana/components/io/File.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,6:File:7,4:HTTPUtil:8,8:FileSystem:7,8:StringUtil:9,9:List:10|
+
+value: 124.0 | count: 360 | avg: 0.3444444444444444444
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGETLB.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/io/File.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o,../repository/scheduler/RoundRobin.o,../repository/scheduler/SchedulerUtil.o,/home/roberto/dana/components/util/ConfigFile.o,/home/roberto/dana/components/io/TextFile.o,/home/roberto/dana/components/data/adt/HashTable.o,./external_references/autogen/ER3.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,4:HTTPUtil:7,7:FileSystem:8,7:StringUtil:9,9:List:10,6:HTTPUtil:7,6:Scheduler:11,11:TCPSocket:1,11:SchedulerUtil:12,12:FileSystem:8,12:ConfigFile:13,13:TextFile:14,14:File:8,13:StringUtil:9,13:HashTable:15,12:ER:16,6:StringUtil:9|
+
+value: 1413.0 | count: 360 | avg: 3.925
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+big image (3mb_image) --- 100 threads
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGET.o,/home/roberto/dana/components/io/File.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,6:File:7,4:HTTPUtil:8,8:FileSystem:7,8:StringUtil:9,9:List:10|
+
+value: 34068.0 | count: 24 | avg: 1419.5
+
+|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGETLB.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/io/File.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o,../repository/scheduler/RoundRobin.o,../repository/scheduler/SchedulerUtil.o,/home/roberto/dana/components/util/ConfigFile.o,/home/roberto/dana/components/io/TextFile.o,/home/roberto/dana/components/data/adt/HashTable.o,./external_references/autogen/ER3.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,4:HTTPUtil:7,7:FileSystem:8,7:StringUtil:9,9:List:10,6:HTTPUtil:7,6:Scheduler:11,11:TCPSocket:1,11:SchedulerUtil:12,12:FileSystem:8,12:ConfigFile:13,13:TextFile:14,14:File:8,13:StringUtil:9,13:HashTable:15,12:ER:16,6:StringUtil:9|
+
+value: 43704.0 | count: 53 | avg: 824.6037735849056603773

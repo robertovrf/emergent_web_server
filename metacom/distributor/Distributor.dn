@@ -1,0 +1,504 @@
+const char debugMSG[] = "[@Distributor]"
+
+/*
+
+in the distributed setting for shared state, and to maintain the same properties of the local model
+we will need some centralised entities to maintain the model...
+
+what we are trying to replicate the local model in a distributed setting...
+
+we only generate the variations for class B if we are the owner, otherwise it is just one composition
+
+architectural description:
+|classA[interface]:IP,classB[comp]:IP,classB[comp]:unknown|listcomps|relations| 
+*/
+
+//const char RMANAGER_IP[] 	= "scc-mc1.lancs.ac.uk"
+//const char RMANAGER_IP[] 	= "scc-mc5.lancs.ac.uk"
+const char NAMESPACE[] 		= "danapedia"
+
+component provides distributor.Distributor requires io.Output out, data.IntUtil iu, 
+	monitoring.Perception, oracle.Mapping, oracle.PortManager portManager, 
+	composition.RecursiveLoader recLoader, data.StringUtil strUtil, injector.Injector injector,
+	rest.RESys, distributor_proxies.Proxy, http.handler.GET.HTTPGET, rest.RESLauncher, rest.RManager {
+
+	Perception perception 	= null
+	String ipList[]			= null
+	String configs[] 		= null
+	int pointer 			= 0
+	RESys sys[] 			= null
+	Mapping mapping 		= null
+	RefIDC mapRefs[]		= null
+	char RMANAGER_IP[]		= ""
+
+	Distributor:Distributor(char IP[]) {
+		RMANAGER_IP = IP
+		mapping = new Mapping()
+		perception = new Perception(true)
+		/* not quite sure how this will be merged into this code... */
+		Reference refs[] = mapping.getRefs()
+		mapRefs = new RefIDC[refs.arrayLength]
+		out.println("$(debugMSG) Loading distributor proxies IDCs...")
+		for (int i = 0; i < refs.arrayLength; i++) {
+			mapRefs[i] = new RefIDC()
+			out.println("$(debugMSG) $(refs[i].proxyClient)")
+			mapRefs[i].proxyCl = recLoader.load(refs[i].proxyClient).mainComponent
+			if ((refs[i].proxyServer != "distributor_proxies/HTTPGETSP.o") &&
+				(refs[i].proxyServer != "distributor_proxies/PrimeSP.o")) {
+				out.println("$(debugMSG) $(refs[i].proxyServer)")
+				mapRefs[i].proxySer = recLoader.load(refs[i].proxyServer).mainComponent	
+			}
+		}
+		mapping.setRefsIDC(mapRefs, portManager)
+		/* ... */
+		injector.toInjectObject(mapping)
+		perception.addInjector(injector)
+	}
+
+	/* being distributed means "distributor_proxies", or "Remote" */
+	bool isDistributed(char config[]) {
+		String helper[] = strUtil.explode(config, "|")
+		// in case we are validating a config that is in the distributed format
+		// e.g. |ips|comps|relations|
+		if (helper.arrayLength == 3) { return true }
+		String comps[] = strUtil.explode(helper[0].string, ",")
+		for (int i = 0; i < comps.arrayLength; i++) {
+			if ((strUtil.find(comps[i].string, "distributor_proxies") != StringUtil.NOT_FOUND) ||
+			(strUtil.find(comps[i].string, "[classB]") != StringUtil.NOT_FOUND)) {
+				if (strUtil.find(comps[i].string, "HTTPGETSP") == StringUtil.NOT_FOUND) {
+					return true	
+				}
+			}
+		}
+		return false
+	}
+
+	char[] getFormattedIPs(String ips[], int numIPs) {
+		char result[] = null
+		for (int i = 0; i <= numIPs; i++) {
+			if (i == 0) { result = new char[](result, ips[i].string) }
+			else { result = new char[](result, ",", ips[i].string) }
+		}
+		return result
+	}
+
+	bool classB(char config[], bool distributed) {
+		String helper[] = strUtil.explode(config, "|")
+		String comps[]
+		if (distributed) { comps = strUtil.explode(helper[1].string, ",") }
+		else { comps = strUtil.explode(helper[0].string, ",") }
+		for (int i = 0; i < comps.arrayLength; i++) {
+			if (strUtil.find(comps[i].string, "[classB]") != StringUtil.NOT_FOUND) {
+				return true
+			}
+		}
+		return false
+	}
+
+	bool classA(char config[], bool distributed) {
+		String helper[] = strUtil.explode(config, "|")
+		String comps[]
+		if (!distributed) { comps = strUtil.explode(helper[0].string, ",") }
+		else { comps = strUtil.explode(helper[1].string, ",") }
+		for (int i = 0; i < comps.arrayLength; i++) {
+			if (strUtil.find(comps[i].string, "distributor_proxies") != StringUtil.NOT_FOUND) {
+				return true
+			}
+		}
+		return false
+	}
+
+	//TODO: generate variants per interface -- if class A, if class B, etc.
+	String[] generateVariants(char config[], String ips[]) {
+		if (ips.arrayLength <= 2) { throw new Exception ("IP list must have at least 3 ip addresses.") }
+		String result[] = new String[ips.arrayLength-2]() 
+		char class[]
+		if (classA(config, false)) { class = "classA:" }
+		else { class = "classB:" }
+		for (int i = 0; i < ips.arrayLength-2; i++) {
+			result[i] = new String(new char[]("|", class, getFormattedIPs(ips, i+2), config))
+		}
+		return result
+	}
+
+	//TODO: this will only work when I have only one class B interface in the composition
+	char[] classBInterface(char config[], bool distributed) {
+		String configsParts[] = strUtil.explode(config, "|")
+		String connections[]
+		String comps[]
+		if (distributed) {
+			connections = strUtil.explode(configsParts[2].string, ",")
+			comps = strUtil.explode(configsParts[1].string, ",")	
+		} else {
+			connections = strUtil.explode(configsParts[1].string, ",")
+			comps = strUtil.explode(configsParts[0].string, ",")
+		}
+		for (int i = 0; i < comps.arrayLength; i++) {
+			if (strUtil.find(comps[i].string, "[classB]") != StringUtil.NOT_FOUND) {
+				for (int j = 0; j < connections.arrayLength; j++) {
+					if (strUtil.find(connections[j].string, new char[](":", iu.intToString(i)))
+						!= StringUtil.NOT_FOUND) {
+						String connectionsPart[] = strUtil.explode(connections[j].string, ":")
+						return connectionsPart[1].string
+					}
+				}
+			}
+		}
+		return null
+	}
+
+	// this is not very efficient
+	String[] addDistributedConfigs(String configsList[], String ips[]) {
+		String result[] = null
+		String variants[] = null
+		for (int i = 0; i < configsList.arrayLength; i++) {
+			if (isDistributed(configsList[i].string)) {
+				if (classB(configsList[i].string, false)) {
+					char remoteInterface[] = classBInterface(configsList[i].string, false)
+					//TODO: update the ip for the Rmanager
+					RManager manager = new RManager(RMANAGER_IP, RManager.RMANAGER_PORT)
+					char response[] = manager.register(ips[0].string, NAMESPACE, remoteInterface, false)
+					if (response == RManager.JUST_REGISTERED) {
+						/* class B - all */
+						variants = generateVariants(configsList[i].string, ips)
+						result = new String[](result, variants)	
+					} else {
+						/* class B - fixed */
+						char newConf[] = new char[]("|classB:fixed", configsList[i].string)
+						result = new String[](result, new String(newConf))
+					}
+				} else {
+					/* class A */
+					variants = generateVariants(configsList[i].string, ips)
+					result = new String[](result, variants)	
+				}
+			} else { result = new String[](result, configsList[i]) }
+		}
+		return result
+	}
+
+	void Distributor:setIpList(String ips[]) {
+		ipList = ips
+		// TODO: (HOW??) add all client proxies for each interface of the target application
+		//perception.addComp(new String[](new String("distributor_proxies/HTTPGETCPLB.o")))
+		perception.addComp(new String[](new String("distributor_proxies/PrimeCP.o")))
+		configs = perception.getAllConfigs()
+		configs = addDistributedConfigs(configs, ipList)
+		// TODO: get starting port number and local ip address
+		firstTimeSetConfig(configs[0].string)
+		//update ports to the portManager
+	}
+
+	String[] Distributor:getAllConfigs() {
+		if (configs == null) {
+			return perception.getAllConfigs()	
+		}
+		return configs
+	}
+
+	char[] Distributor:getConfig() {
+		if (configs == null) {
+			return perception.getConfig()	
+		}
+		return configs[pointer].string
+	}
+
+	void Distributor:setMain(char path[], char args[]) {
+		perception.setMain(path, args)
+		configs = perception.getAllConfigs()
+	}
+
+	ProxyInfo[] getProxyInfosClassB(char config[]) {
+		String result[] = strUtil.explode(config, "|")
+		String ipsPorts[] = strUtil.explode(result[0].string, ",")
+		ProxyInfo pInfos[]
+		if ((ipsPorts.arrayLength == 1) && (ipsPorts[0].string == "classB:fixed")) {
+			// TODO... connect to the ClassB Manager and get a list of IPS
+			throw new Exception("Class B fixed not implemented")
+		} else {
+			char nameSpace[] = NAMESPACE
+			char remoteInterface[] = classBInterface(config, true)
+			char ownerIP[] = strUtil.subString(ipsPorts[0].string, 7, ipsPorts[0].string.arrayLength-7)
+			String ips[]
+			for (int i = 1; i < ipsPorts.arrayLength; i++) {
+				ips = new String[](ips, ipsPorts[i])
+			}
+			RManager manager = new RManager(RMANAGER_IP, RManager.RMANAGER_PORT)
+			pInfos = manager.change(ownerIP, nameSpace, remoteInterface, ips)
+		}
+		return pInfos
+	}
+
+	//TODO: update this... now we have a "classA:" thingy
+	ProxyInfo[] getProxyInfosClassA(char config[]) {
+		String result[] = strUtil.explode(config, "|")
+		String ipsPorts[] = strUtil.explode(result[0].string, ",")
+		ProxyInfo pInfos[] = new ProxyInfo[ipsPorts.arrayLength-1]()
+		// the first ipsPorts is the local one, we only want the remote ones
+		for (int i = 1; i < ipsPorts.arrayLength; i++) {
+			String ipPort[] = strUtil.explode(ipsPorts[i].string, ":")
+			RESLauncher resl = new RESLauncher(ipPort[0].string, RESLauncher.ESLAUNCHER_PORT)
+			// the idea here is to say: please start an EmergentSys that will execute the 
+			// HTTPGETREMOTE component of course in future versions this HTTPGETREMOTE component 
+			// will vary according to the component being relocated
+			StartInfo startInfo 	= new StartInfo()
+			startInfo.className 	= RESLauncher.CLASS_A
+			startInfo.appName 		= "EmergentSys"
+			//startInfo.startCommand 	= "../repository/HTTPGETREMOTE.o"//this is actually the argument?
+			startInfo.startCommand 	= "../repository/PRIMEREMOTE.o"
+			startInfo.ip 			= ipPort[0].string
+			AppStarted appStarted 	= resl.start(startInfo)
+			// launch the EmergentSys and get its port address
+			// and get the proxy address ass well for each of the ips in infos
+			out.println(new char[]("$(debugMSG) IP of ES that had just been started: ",
+				"$(appStarted.ip):$(iu.intToString(appStarted.port))"))
+			pInfos[i-1] = new ProxyInfo(appStarted.ip, appStarted.port)
+		}
+		return pInfos
+	}
+
+	int getPortNum(char config[]) {
+		String result[] = strUtil.explode(config , "|")
+		String ipsPorts[] = strUtil.explode(result[0].string, ",")
+		String ipPort[] = strUtil.explode(ipsPorts[0].string, ":")
+		return iu.intFromString(ipPort[2].string)
+	}
+
+	char[] getLAddress(char config[]) {
+		String result[] = strUtil.explode(config , "|")
+		String ipsPorts[] = strUtil.explode(result[0].string, ",")
+		String ipPort[] = strUtil.explode(ipsPorts[0].string, ":")
+		return ipPort[1].string
+	}
+
+	char[] extractArchDescription(char config[]) {
+		String helper[] = strUtil.explode(config, "|")
+		return new char[]("|", helper[1].string, "|", helper[2].string, "|")
+	}
+
+	bool terminateClassA(char ip[], int port) {
+		RESLauncher resl = new RESLauncher(ip, RESLauncher.ESLAUNCHER_PORT)
+		AppInfo appInfo = new AppInfo()
+		appInfo.className = RESLauncher.CLASS_A
+		appInfo.appName = "EmergentSys"
+		appInfo.ip = ip
+		appInfo.portProxy = port
+		out.println("$(debugMSG) termianteClassA ip: $(appInfo.ip):$(iu.intToString(appInfo.portProxy))")
+		return resl.finish(appInfo)
+	}
+
+	void firstTimeSetConfig(char c[]) {
+		char config[] = c
+		bool stateChanged = false
+		// verifying if new composition is actually a valid one
+		if (configs != null) {
+			bool found = false
+			for (int i = 0; i < configs.arrayLength; i++) {
+				if (configs[i].string == config) {
+					pointer = i
+					found = true
+					break
+				}
+			}
+			if (!found) { 
+				out.println("$(debugMSG) Config not found!")
+				return
+			}
+		}
+		// Perform distributed adaptation
+		if (isDistributed(config)) {
+			if (classA(config, true)) {
+				ProxyInfo infos[] = getProxyInfosClassA(config)
+				for (int i = 0; i < infos.arrayLength; i++) {
+					out.println(new char[]("$(debugMSG) $(infos[i].address)",
+						" - $(iu.intToString(infos[i].port))"))
+				}
+				out.println(new char[]("$(debugMSG) length of infos:",
+					" $(iu.intToString(infos.arrayLength))"))
+				// NOTE: this changes a static state,
+				// but only changes if the variable values change
+				// this will never change, therefore it is save to leave this here
+				// but note that this is not ideal (changing static variables is not SAFE for adaptation)			
+				int portNum = getPortNum(config) // these are local port and address
+				char lAddress[] = getLAddress(config)
+				out.println("portNum: $(iu.intToString(portNum)).\nlAddress: $(lAddress).")
+				portManager.setInfo(portNum, lAddress)
+				config = extractArchDescription(config)	
+				if (config == perception.getConfig()) {
+					// the mapping is not a static variable, and thus it is safe specially because it triggers
+					// adaptation to occur safely through the new Assembly method, when toInject() function 
+					// is called
+					mapping = new Mapping()
+					mapping.setRefsIDC(mapRefs, portManager)
+					mapping.setInfos(infos)
+					injector.toInjectObject(mapping)
+					injector.toInjectData(infos)
+					changeState()
+					stateChanged = true
+				} else {
+					mapping.setRefsIDC(mapRefs, portManager) 
+					mapping.setInfos(infos)
+					injector.toInjectData(infos)
+				}
+			} else {
+				ProxyInfo infos[] = getProxyInfosClassB(config)
+				config = extractArchDescription(config)
+				if (config == perception.getConfig()) {
+					// if config hasn't changed, only the location of the WS
+					injector.toInjectData(infos)
+					changeState()
+					stateChanged = true
+				} else { injector.toInjectData(infos) }
+			}
+		}
+		// perform local adaptation
+		if (!stateChanged) { perception.setConfig(config) }
+	}
+
+	// c for config
+	void Distributor:setConfig(char c[]) {
+		if (c == configs[pointer].string) { return }
+		bool stateChanged = false
+		char config[] = c
+
+		// getting information from previous compositions
+		// if they are remote compositions -- I need some information to kill 
+		// their remote processes
+		ProxyInfo oldInfo[] = null
+		MngRequest classBRequest = null
+		if (classA(configs[pointer].string, true)) {
+			oldInfo = mapping.getInfo()
+		} else if (classB(configs[pointer].string, true)) {
+			classBRequest = new MngRequest()
+			String result[] = strUtil.explode(configs[pointer].string, "|")
+			String ipsPorts[] = strUtil.explode(result[0].string, ",")
+			classBRequest.ownerIP = strUtil.subString(ipsPorts[0].string, 7, ipsPorts[0].string.arrayLength-7)
+			classBRequest.nameSpace = NAMESPACE
+			classBRequest.remoteInterface = classBInterface(configs[pointer].string, true)
+		}
+
+		// verifying if new composition is actually a valid one
+		if (configs != null) {
+			bool found = false
+			for (int i = 0; i < configs.arrayLength; i++) {
+				if (configs[i].string == config) {
+					pointer = i
+					found = true
+					break
+				}
+			}
+			if (!found) { 
+				out.println("$(debugMSG) Config not found!")
+				return
+			}
+		}
+
+		// Perform distributed adaptation
+		if (isDistributed(config)) {
+			if (classA(config, true)) {
+				ProxyInfo infos[] = getProxyInfosClassA(config)
+				for (int i = 0; i < infos.arrayLength; i++) {
+					out.println(new char[]("$(debugMSG) $(infos[i].address)",
+						" - $(iu.intToString(infos[i].port))"))
+				}
+				out.println(new char[]("$(debugMSG) length of infos:",
+					" $(iu.intToString(infos.arrayLength))"))
+				// NOTE: this changes a static state,
+				// but only changes if the variable values change
+				// this will never change, therefore it is safe to leave this here
+				// but note that this is not ideal (changing static variables is not SAFE for adaptation)			
+				int portNum = getPortNum(config) // these are local port and address
+				char lAddress[] = getLAddress(config)
+				out.println("portNum: $(iu.intToString(portNum)).\nlAddress: $(lAddress).")
+				portManager.setInfo(portNum, lAddress)
+				config = extractArchDescription(config)	
+				if (config == perception.getConfig()) {
+					// the mapping is not a static variable, and thus it is safe specially because it triggers
+					// adaptation to occur safely through the new Assembly method, when toInject() function 
+					// is called
+					mapping = new Mapping()
+					mapping.setRefsIDC(mapRefs, portManager)
+					mapping.setInfos(infos)
+					injector.toInjectObject(mapping)
+					injector.toInjectData(infos)
+					changeState()
+					stateChanged = true
+				} else {
+					mapping.setRefsIDC(mapRefs, portManager) 
+					mapping.setInfos(infos)
+					injector.toInjectData(infos)
+				}
+			} else {
+				ProxyInfo infos[] = getProxyInfosClassB(config)
+				config = extractArchDescription(config)
+				if (config == perception.getConfig()) {
+					// if config hasn't changed, only the location of the WS
+					injector.toInjectData(infos)
+					changeState()
+					stateChanged = true
+				} else { injector.toInjectData(infos) }
+			}
+		}
+
+		// perform local adaptation
+		if (!stateChanged) { perception.setConfig(config) }
+
+		// terminating remote references
+		// class A
+		if (oldInfo != null) {
+			for (int i = 0; i < oldInfo.arrayLength; i++) {
+				out.println(new char[]("$(debugMSG) terminateClassA ip",
+					" $(oldInfo[i].address):$(iu.intToString(oldInfo[i].port))"))
+				if (!terminateClassA(oldInfo[i].address, oldInfo[i].port)) {
+					throw new Exception(new char[]("$(debugMSG) Something terribly ", 
+						"wrong happened when attempting to terminate class A!"))
+				}
+			}
+		}
+		// class B
+		if (classBRequest != null) {
+			out.println("Terminating old class Bs")
+			RManager manager = new RManager(RMANAGER_IP, RManager.RMANAGER_PORT)
+			manager.terminate(classBRequest.ownerIP, classBRequest.nameSpace, classBRequest.remoteInterface)
+		}
+	}
+
+	void Distributor:removeComp(String compPaths[]) {
+		//TODO: update the configs lists...
+		perception.removeComp(compPaths)
+	}
+
+	void Distributor:addComp(String compPaths[]) {
+		//TODO: update the configs lists...
+		perception.addComp(compPaths)
+	}
+
+	IDCReference[] Distributor:getComponents(String paths[]) {
+		return perception.getComponents(paths)
+	}
+
+	IDCReference[] Distributor:getCompsByProvidedInterface(char providedIntf[]) {
+		return perception.getCompsByProvidedInterface(providedIntf)
+	}
+
+	char[] Distributor:getPerceptionData() {
+		return perception.getPerceptionData()
+	}
+
+	void Distributor:addProxy(char exp[]) {
+		// TODO: need to update the config lists?????
+		perception.addProxy(exp)
+	}
+
+	void Distributor:removeProxy(char proxyExp[]) {
+		perception.removeProxy(proxyExp)
+	}
+
+	String[] Distributor:getProxies() {
+		return perception.getProxies()
+	}
+
+	void changeState() {
+		perception.changeState()
+	}
+}

@@ -1,0 +1,9 @@
+interface Injector {
+	event triggerChangeState()
+	Data[] getData()
+	void triggerAdaptation()
+	void toInjectData(Data dt[])
+	void toInjectObject(Object object)
+	void inject(IDC comp)
+	bool shouldInject(IDC comp)	
+}

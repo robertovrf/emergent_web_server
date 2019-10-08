@@ -1,0 +1,12 @@
+//uses external_references.autogen.ER
+data ServerInfo {
+	char ip[]
+	int port
+	char name[]
+}
+
+interface SchedulerUtil {
+	const char CONFIG_FILE[] = "../repository/scheduler/server_list.config"
+	int getNumServers()
+	ServerInfo getServer(int index)
+}

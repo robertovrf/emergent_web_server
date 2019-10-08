@@ -1,0 +1,75 @@
+// RManager.dn
+// Author: Roberto Rodrigues Filho
+
+const char debugMSG[] = "[@RManager]"
+const char END_OF_STR[] = "\r\n\r\n"
+
+component provides rest.RManager requires io.Output out, data.IntUtil iu, net.TCPSocket, 
+	http.util.HTTPUtil httpUtil, data.json.JSONEncoder jsonEncoder {
+
+	char SYSTEM_IP[] = ""
+	int SYSTEM_PORT = 0
+
+	RManager:RManager(char ip[], int port) {
+		SYSTEM_IP 	= ip
+		SYSTEM_PORT = port
+	}
+
+	char[] RManager:register(char ownerIP[], char nameSpace[], char remoteInterface[], bool sharedState) {
+		MngRequest request = new MngRequest()
+		request.ownerIP = ownerIP
+		request.nameSpace = nameSpace
+		request.remoteInterface = remoteInterface
+		request.sharedState = sharedState
+		char payload[] = jsonEncoder.jsonFromData(request, null)
+		HTTPMessage msg = makeRequest("POST", RManager.REGISTER, payload)
+		if (msg.status == 200) { return msg.postData }
+		return null
+	}
+
+	ProxyInfo[] RManager:change(char ownerIP[], char nameSpace[], char remoteInterface[], String ips[]) {
+		MngRequest request = new MngRequest()
+		request.ownerIP = ownerIP
+		request.nameSpace = nameSpace
+		request.remoteInterface = remoteInterface
+		request.currentIPs = ips
+		char payload[] = jsonEncoder.jsonFromData(request, null)
+		HTTPMessage msg = makeRequest("POST", RManager.CHANGE, payload)
+		if (msg.status == 200) { return jsonEncoder.jsonToArray(msg.postData, typeof(ProxyInfo[]), null) }
+		return null
+	}
+
+	char[] RManager:terminate(char ownerIP[], char nameSpace[], char remoteInterface[]) {
+		MngRequest request = new MngRequest()
+		request.ownerIP = ownerIP
+		request.nameSpace = nameSpace
+		request.remoteInterface = remoteInterface
+		char payload[] = jsonEncoder.jsonFromData(request, null)
+		HTTPMessage msg = makeRequest("POST", RManager.TERMINATE, payload)
+		if (msg.status == 200) { return msg.postData }
+		return null
+	}
+
+	String[] RManager:getIPs(char nameSpace[], char remoteInterface[]) {
+		return null
+	}
+
+	HTTPMessage makeRequest(char method[], char url[], char payload[]) {
+		char req[] 	= ""
+		if (method == "GET") { req = new char[]("GET /meta/", url, " HTTP/1.0", END_OF_STR) }
+		else if (method == "POST") {
+			req = new char[]("POST /meta/", url, " HTTP/1.0\r\n", "Content-Length: ",
+				iu.intToString(payload.arrayLength), END_OF_STR, payload)
+		}
+		return request(req)
+	}
+
+	HTTPMessage request(char req[]) {
+		TCPSocket s = new TCPSocket()
+		s.connect(SYSTEM_IP, SYSTEM_PORT)
+		s.send(req)
+		HTTPMessage msg = httpUtil.readHTTPRequest(s)
+		s.disconnect()
+		return msg
+	}
+}

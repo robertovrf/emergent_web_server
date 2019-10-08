@@ -1,0 +1,24 @@
+uses oracle.Mapping
+uses distributor_proxies.Proxy
+
+data Reference {
+	//beware that the client reference will be used in the server side by some server proxy
+	char intfPackage[]
+	char intf[]
+	char proxyClient[]
+	char proxyServer[]
+	Object obj
+	Type type
+	IDC proxyCl
+	IDC proxySer
+}
+
+interface Oracle {
+	void setMapping(Mapping newMapping)
+	Reference[] extractReferences(Data d)
+	Reference getReference(Type t, Object o)
+	Object getObject(char intf[])
+	ProxyInfo[] generatePorts(int num)
+	ProxyInfo[] getInfo()
+	char[] getLocalAddress()
+}

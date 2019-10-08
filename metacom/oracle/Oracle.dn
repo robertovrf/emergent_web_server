@@ -1,0 +1,62 @@
+const char debugMSG[] = "[@Oracle]"
+
+component provides oracle.Oracle requires io.Output out {
+	static Mapping mapping
+
+	void Oracle:setMapping(Mapping newMapping) {
+		mapping = newMapping
+	}
+
+	TypeObj[] recursiveObjectSearch(Type t, TypeObj types[], Data d) {
+		for (int i = 0; i < t.fields.arrayLength; i++) {
+			TypeField tf = d.[t.fields[i].name]
+			if (t.fields[i].type.class == Type.OBJECT) {
+				Object obj = d:.tf
+				types = new TypeObj[](types, new TypeObj(t.fields[i].type, obj))
+			} else if (t.fields[i].type.class == Type.DATA) {
+				if (Field.FLAG_RECURSION != t.fields[i].flags) {
+					Data attrData = d:.tf
+					types = new TypeObj[](types, 
+						recursiveObjectSearch(t.fields[i].type, types, attrData))
+				}
+			}
+		}
+		return types
+	}
+
+	TypeObj[] findObjects(Data d) {
+		TypeObj types[] = null
+		types = recursiveObjectSearch(typeof(d), types, d)
+		return types
+	}
+
+	Reference[] Oracle:extractReferences(Data d) {
+		TypeObj types[] = findObjects(d)
+		Reference refs[] = null
+		for (int i = 0; i < types.arrayLength; i++) {
+			refs = new Reference[](refs, mapping.getReference(types[i]))
+		}
+		return refs
+	}
+
+	Reference Oracle:getReference(Type t, Object o) {
+		return mapping.getReference(new TypeObj(t, o))
+	}
+
+	Object Oracle:getObject(char intf[]) {
+		return mapping.getObject(intf)
+	}
+
+	ProxyInfo[] Oracle:generatePorts(int num) {
+		return mapping.generatePorts(num)
+	}
+
+	ProxyInfo[] Oracle:getInfo() {
+		return mapping.getInfo()
+	}
+
+	char[] Oracle:getLocalAddress() {
+		return mapping.getLocalAddress()
+	}
+}
+

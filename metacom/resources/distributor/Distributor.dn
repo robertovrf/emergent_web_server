@@ -1,0 +1,23 @@
+uses monitoring.Perception
+
+interface Distributor {
+	/* Assembly functions */
+	String[] getAllConfigs()
+	char[] getConfig()
+	void setMain(char path[], char args[])
+	void setConfig(char config[])
+	void removeComp(String compPaths[])
+	void addComp(String compPaths[])
+	IDCReference[] getComponents(String paths[])
+	IDCReference[] getCompsByProvidedInterface(char providedIntf[])
+
+	/* Perception functions */
+	char[] getPerceptionData()//return json
+	void addProxy(char exp[])
+	void removeProxy(char proxyExp[])
+	String[] getProxies()
+
+	/* Distributor functions */
+	Distributor(char IP[])
+	void setIpList(String ips[])
+}

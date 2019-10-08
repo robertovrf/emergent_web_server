@@ -1,0 +1,121 @@
+uses data.String
+
+data Metric {
+	char name[]
+	char config[]
+	char source[]
+	dec value
+	int count
+	bool preferHigh
+	char startTime[]
+	char endTime[]
+}
+
+data Event {
+	char name[]
+	char source[]
+	dec value
+	int count
+	char startTime[]
+	char endTime[]
+}
+
+//perception data
+data PData {
+	Metric metrics[]
+	Event events[]
+}
+
+const char debugMSG[] = "[@DistUCB]"
+const int OBSERVATION_WINDOW = 5000
+const int HIGHEST_COST = 300
+
+component provides learning.DistUCB requires io.Output out, learning.LearningUCB, io.TextFile, 
+	io.FileSystem, data.json.JSONEncoder encoder, rest.RESys, time.Timer t, data.DecUtil du {
+	
+	LearningUCB learning = null
+	String actions[] = null
+	char comp[] = null
+	bool end = false
+	Thread threadLoop = null
+
+	void DistUCB:setProxy(char address[], int port) {
+		RESys sys = new RESys(address, port)
+		sys.addProxy("|../metacom/monitoring/proxies/HTTPProxy.o|*(*:http.handler.GET.HTTPGET[0]:*)|")
+	}
+
+	void loop(char rootComp[], char address[], int port) {
+		end = false
+		comp = rootComp
+		FileSystem fSys = new FileSystem()
+		RESys sys = new RESys(address, port)
+		actions = sys.getAllConfigs()
+		
+		/* state status ... */
+		if (fSys.exists(new char[](rootComp,".data"))) {
+			TextFile file = new TextFile(new char[](rootComp,".data"), File.FILE_ACCESS_READ)
+			char jsonState[] = file.readLine()
+			file.close()
+			learning = new LearningUCB(encoder.jsonToData(jsonState, typeof(MLState), null))
+		} else {
+			learning = new LearningUCB(null)
+			learning.setActions(actions)
+		}
+
+		/* learning algorithm */
+		while (!end) {
+			int action = learning.getAction()
+			sys.setConfig(actions[action].string)
+			// TEST
+			//out.println("$(debugMSG) $(actions[action].string)")
+			t.sleep(OBSERVATION_WINDOW)
+			PData pData = encoder.jsonToData(sys.getPerceptionData(), typeof(PData), null)
+			/* scaling data */
+			if (pData.metrics[0].count > 0.0) {
+				dec reward = costToReward(pData.metrics[0].value / pData.metrics[0].count)
+				learning.consumeData(reward)
+			}
+		}
+	}
+
+	void DistUCB:start(char rootComp[], char address[], int port) {
+		threadLoop = asynch::loop(rootComp, address, port)
+	}
+
+	dec costToReward(dec cost) {
+		dec highCost = HIGHEST_COST
+		dec lowCost = 0
+
+		//first truncate at high/low cost
+		if (cost > highCost) { cost = highCost }
+		else if (cost < lowCost) { cost = lowCost }
+
+		//shift negative low
+		if (lowCost < 0.0) {
+			dec mod = lowCost / -1.0
+			cost += mod
+			lowCost += mod
+			highCost += mod
+		}
+
+		//now convert the range into 0.0 -> 1.0
+		dec scaledCost = cost / highCost
+
+		//and invert to get reward
+		dec reward = 1.0 - scaledCost
+
+		return reward
+	}
+
+	void DistUCB:stop() {
+		out.println("$(debugMSG) Stopping...")
+		if (t == null) { throw new Exception("$(debugMSG) ERROR! Thread was not started!") }
+		end = true
+		threadLoop.join()
+		MLState state = learning.getState()
+		TextFile file = new TextFile(new char[](comp,".data"), File.FILE_ACCESS_WRITE)
+		file.writeLine(encoder.jsonFromData(state, null))
+		file.close()
+		out.println("$(debugMSG) Stopped!")
+	}
+}

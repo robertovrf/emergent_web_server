@@ -1,0 +1,9 @@
+component provides App requires io.Output out, data.IntUtil iu, distributor_proxies.Proxy:httpget p {
+	int App:main(AppParam params[]) {
+		int port = 2013
+		if (params.arrayLength > 0) { port = iu.intFromString(params[0].string)	}
+		p.setInfo(new ProxyInfo("localhost", port), "")
+		p.start()
+		return 0
+	}
+}

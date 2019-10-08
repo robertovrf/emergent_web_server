@@ -1,0 +1,76 @@
+// HTTPProxy
+//
+// Proxy that monitors response time from HTTPHandlers
+//
+// Author: Roberto Rodrigues Filho
+// February @ 2017
+const char debugMSG[] = "[@HTTPProxy]"
+
+component provides http.handler.GET.HTTPGET, monitoring.BeingMonitored requires io.Output out, 
+	http.handler.GET.HTTPGET, monitoring.Container, monitoring.ResponseTime, data.StringUtil stringUtil, 
+	time.Timer, data.IntUtil iu {
+
+	static Container monitor
+
+	implementation BeingMonitored {
+		Event[] BeingMonitored:getEvents() {
+			if (monitor == null) { monitor = new Container() }
+			return monitor.getEvents()
+		}
+
+		Metric[] BeingMonitored:getMetrics() {
+			if (monitor == null) { monitor = new Container() }
+			return monitor.getMetrics()
+		}
+	
+		void BeingMonitored:turnMonitorOn() {
+			if (monitor == null) { monitor = new Container() }
+			monitor.turnMonitorOn()
+		}
+
+		void BeingMonitored:turnMonitorOff() {
+			if (monitor == null) { monitor = new Container() }
+			monitor.turnMonitorOff()
+		}
+	}
+
+	implementation HTTPGET {
+		void HTTPGET:handleRequest(HTTPMessage httpHeader) {
+			if (monitor == null) {
+				monitor = new Container()
+				monitor.turnMonitorOn()
+			}
+
+
+			ResponseTime metric = new ResponseTime()
+			metric.start()
+			
+			// if this returns a httpMessage with the information returned to
+			// the client, I could register the contentLength of the requested
+			// resource...
+			HTTPGET httpGET = new HTTPGET()
+			httpGET.handleRequest(httpHeader)
+			
+			metric.finish()
+			int result = metric.result()
+
+			
+			monitor.addMetric("response_time", result, false)
+			monitor.addEvent(getEvent(httpHeader.mimeType), httpHeader.contentLength)
+		}
+
+		char[] getEvent(char mimeType[]) {
+			char eventT[]
+			int i = 0
+			if ((mimeType == "application/x-javascript") || 
+				(mimeType == "application/javascript")) { return "text"	}
+			while (i < mimeType.arrayLength) {
+				if (mimeType[i] == "/") { break	}
+				i++
+			}
+			if (i < mimeType.arrayLength) {	eventT = stringUtil.subString(mimeType, 0, i) }
+			else { eventT = mimeType }
+			return eventT
+		}
+	}
+}

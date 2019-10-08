@@ -1,0 +1,37 @@
+proxy description solution
+
+Original compressed: |WS, RH, HH|0:RequestHandler:1, 1:HTTPHandler:2|
+Original decompressed: WS:RequestHandler:RH, RH:HTTPHandler:HH
+
+exp: 
+*(*:HTTPHandler[P]:*) -> add P to all matching ANYTHING:HTTPHandler:ANYTHING
+or 
+*(RH:HTTPHandler[P]:*) -> add p to all matching RH:HTTPHandler:ANYTHING
+or
+1(*:HTTPHandler[P]:*) -> first instance of c
+
+other exp examples:
+1(*:HTTPHandler[P]:*)&*(WS:RequestHandler[P2]:*) -> first instance of ANYTHING:HTTPHandler:ANYTHING AND all instances of WS:RequestHandler:ANYTHING
+1(*:HTTPHandler[P]:*);2(WS:RequestHandler[P2]:*) -> first instance of ANYTHING:HTTPHandler:ANYTHING OR the first two instances of WS:RequestHandler:ANYTHING
+1(WS:TCP:TCP,WS:TCPSocket:TCP,WS:RequestHandler:RequestHandler,RequestHandler:HTTPHandler:*) -> first instance of WS:TCP:TCP,WS:TCPSocket:TCP,WS:RequestHandler:RequestHandler,RequestHandler:HTTPHandler:ANYTHING
+
+Proxy compressed: |WebServer.o, Proxy.o|*(0: in terface[1]:* )|
+Proxy decompressed: *(WebServer.o:interface[Proxy.o]:*)
+
+the sign ';' means OR
+the sign '&' means AND
+
+
+no match: WebServer:RequestHandler:RequestHandlerPT, WebServer:TCPSocket:TCP, RequestHandlerPT:HTTPHandler:HTTPHandler
+match: WebServer:RequestHandler:RequestHandlerPT, RequestHandlerPT:HTTPHandler:HTTPProxy, WebServer:TCPSocket:TCP, HTTPProxy:HTTPHandler:HTTPHandler
+
+1(RequestHandlerPT:HTTPHandler[HTTPProxy]:*) -> RequestHandlerPT:HTTPHandler:HTTPProxy, HTTPProxy:HTTPhandler:*
+
+E.g.: 1(*:HTTPHandler[P]:*)&*(WS:RequestHandler[P2]:*);2(WS:RequestHandler[P2]:*)
+E.g.: 1(WS:TCP:TCP,WS:TCPSocket:TCP,WS:RequestHandler:RequestHandler,RequestHandler:HTTPHandler[P]:*);1(*:HTTPHandler[P]:*)&*(WS:RequestHandler[P2]:*)
+
+When specifying the entire path like in the second example, make sure that the proxy is in the last interface of the last bind. A bind is a tuple that is composed of "comp:intf:comp", comp can be the name or number or *. If you still want something else to match after the proxy, you'll use the & (and) operator and add more bindings to it.
+
+The bindingExp which is the expression between paranthensis might not have a proxy in it. If there is a proxy in it, it has to be placed in the last bind (like mentioned before).
+
+NOTE THAT THIS IS A invalid QUERY for this current version: add_proxy ../metacom/monitoring/proxies/HTTPProxy.o |../web_server/request/RequestHandlerPT.o,../metacom/monitoring/proxies/HTTPProxy.o|1(0:HTTPProtocol:*,*:HTTPHandler[1]:*)| -> whenever you have a previous string you shouldn't use '*', the previous query should be exact!

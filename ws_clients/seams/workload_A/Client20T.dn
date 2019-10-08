@@ -1,0 +1,24 @@
+component provides App requires io.Output out, net.http.HTTPRequest http, data.IntUtil iu,
+	time.Calendar calendar, time.DateUtil dateUtil {
+
+	char server[] = "scc-mc1.lancs.ac.uk"
+	int NUM_THREADS = 20
+
+	void makeRequest(char resource[], int id) {
+		DateTime start = calendar.getTime()
+		DateTime firstByte = new DateTime()
+		HTTPResponse resp = http.get(new char[]("http://", server, ":2012/danapedia/action_page.dn?page=view&id=1"), null)
+		DateTime end = calendar.getTime()
+		DateTime diff = dateUtil.diff(start, end)
+		out.println("[$(iu.intToString(id))]: $(iu.intToString(dateUtil.toMilliseconds(diff)))")
+	}
+
+	int App:main(AppParam params[]) {
+		Thread t[] = new Thread[NUM_THREADS]
+		while(true) {
+			for (int counter = 0; counter < NUM_THREADS; counter++) { t[counter] = asynch::makeRequest("", counter) }
+			for (int counter = 0; counter < NUM_THREADS; counter++) { t[counter].join() }
+		}
+		return 0
+	}
+}

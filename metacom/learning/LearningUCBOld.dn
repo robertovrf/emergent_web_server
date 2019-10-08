@@ -1,0 +1,266 @@
+// LearningUCB
+//
+// This component implements the Learning module with the UCB algorithm.
+// 
+// Author: Roberto Rodrigues Filho
+// March @ 2017
+
+const char debugMSG[]		= "[@LearningUCB]"
+/* learning parameters values */
+const int COLLECTION_TIME 	= 5000
+const dec LOWEST_COST 		= 100.0 
+const dec HIGHEST_COST		= 200.0  
+/* system info */
+//const char IP[]  			= "scc-mc1.lancs.ac.uk" // EmergentSys
+const char IP[]  			= "localhost" // EmergentSys
+const int PORT 				= 2011
+
+data UCB {
+	char action[] //config desc
+	dec qValue
+	dec sumValue
+	dec trials	
+}
+
+data Metric {
+	char name[]
+	char config[]
+	char source[]
+	dec value
+	int count
+	bool preferHigh
+	char startTime[]
+	char endTime[]
+}
+
+data Event {
+	char name[]
+	char source[]
+	dec value
+	int count
+	char startTime[]
+	char endTime[]
+}
+
+//perception data
+data PData {
+	Metric metrics[]
+	Event events[]
+}
+
+component provides learning.Learning requires io.Output out, io.Input in, data.IntUtil iu, data.DecUtil du,
+	time.Timer t, rest.RESys, util.Math math, data.json.JSONEncoder encoder, io.TextFile, data.StringUtil strUtil {
+
+	String configList[] 	= null // this won't change
+	String proxyList[] 		= null // this won't change
+	char currentConfig[]	= null // stores the current config in array
+	RESys sys 				= null
+	//TODO need to account for the environment
+	UCB table[]				= null
+	dec cycles				= 1.0
+	bool exit 				= false
+	TextFile log			= null
+	dec HIGHEST_REWARD		= 1.0 / LOWEST_COST
+	dec LOWEST_REWARD		= 1.0 / HIGHEST_COST
+
+/* ------------- dealing with the UCB algorithm ------------- */
+
+	/*
+	def update(self, chosen_arm, reward):
+	    self.counts[chosen_arm] = self.counts[chosen_arm] + 1
+	    n = self.counts[chosen_arm]
+	    value = self.values[chosen_arm]
+	    new_value = ((n - 1) / float(n)) * value + (1 / float(n)) * reward
+	    self.values[chosen_arm] = new_value
+	    return
+	*/
+	//TODO: test with the different average to see what changes
+	//TODO: test with different formula, the one that has the exploration constant
+	void updateTable(PData pData, int action) {
+		out.println("$(debugMSG) Updating table...")
+		dec cost = pData.metrics[0].value/pData.metrics[0].count
+		table[action].sumValue += cost
+		table[action].trials += 1.0
+		// it is good to change the way we are averaging things
+		table[action].qValue = table[action].sumValue/table[action].trials
+		//debugging statements
+		char toBePrinted[] = new char[](pData.metrics[0].source, ": ", du.decToString(cost))
+		out.println(toBePrinted)
+		log.writeLine(toBePrinted)
+	}
+  
+	/*
+	  def select_arm(self):
+	    n_arms = len(self.counts)
+	    for arm in range(n_arms):
+	      if self.counts[arm] == 0:
+	        return arm
+	    ucb_values = [0.0 for arm in range(n_arms)]
+	    total_counts = sum(self.counts)
+	    for arm in range(n_arms):
+	      bonus = math.sqrt((2 * math.log(total_counts)) / float(self.counts[arm]))
+	      ucb_values[arm] = self.values[arm] + bonus
+	    return ind_max(ucb_values)
+	*/
+	int selection() {
+		out.println("$(debugMSG) Selecting state...")
+		dec maxUCB = -1.0
+		dec currentUCB = 0.0
+		int selectedAction = 0
+		for (int i = 0; i < table.arrayLength; i++) {
+			if (table[i].trials == 0.0) {
+				return i
+			} else {
+				out.println("$(debugMSG) Config: $(iu.intToString(i)) - trials: $(du.decToString(table[i].trials))")
+				dec reward = getReward(table[i].qValue)
+				out.println("$(debugMSG) Inverted reward: $(du.decToString(reward))")
+				dec bonus = math.natlog(cycles)
+				bonus = 2.0 * bonus
+				bonus = bonus/table[i].trials
+				bonus = math.sqrt(bonus)
+				out.println("$(debugMSG) Second equation: $(du.decToString(bonus))")
+				currentUCB = reward + bonus
+				if (currentUCB > maxUCB) {
+					maxUCB = currentUCB
+					selectedAction = i
+				}
+				out.println("$(debugMSG) Config: $(iu.intToString(i)) - qValue: $(du.decToString(table[i].qValue))")
+				out.println("$(debugMSG) Config: $(iu.intToString(i)) - trials: $(du.decToString(table[i].trials))")
+				out.println("$(debugMSG) Config: $(iu.intToString(i)) - currentUCB: $(du.decToString(currentUCB))")
+				out.println("$(debugMSG) Config: $(iu.intToString(i)) - maxUCB: $(du.decToString(maxUCB))")	
+			}
+		}
+		return selectedAction
+	}
+
+	/*
+	def initialize(self, n_arms):
+	    self.counts = [0 for col in range(n_arms)]
+	    self.values = [0.0 for col in range(n_arms)]
+	    return
+	*/
+	void loadTable() {
+		table = new UCB[configList.arrayLength]
+		for (int i = 0; i < configList.arrayLength; i++) {
+			table[i] = new UCB()
+			table[i].action = configList[i].string
+			table[i].trials = 0.0
+		}
+	}
+
+	dec getReward(dec cost) {
+		dec reward = 1.0 / cost
+		reward = (reward - LOWEST_REWARD) / (HIGHEST_REWARD - LOWEST_REWARD)
+		return reward
+	}
+
+	void waitCollection() {
+		t.sleep(COLLECTION_TIME)
+	}
+
+	char[] getProxyExp() {
+		return new char[]("|../metacom/monitoring/proxies/HTTPProxy.o|*(*:HTTPGET[0]:*)|")
+	}
+
+	void start() {
+		out.println("$(debugMSG) Algo started...")
+		int action = 0
+		while (!exit) {
+			out.println("$(debugMSG) Loop...")
+			action = selection()
+			sys.setConfig(configList[action].string)
+			waitCollection()
+			updateTable(encoder.jsonToData(sys.getPerceptionData(),
+				typeof(PData), null), action)
+			cycles += 1.0
+		}
+	}
+
+/* ------------- dealing with distributed configurations ------------- */
+
+	/* being distributed means "distributor_proxies" */
+	bool isDistributed(char config[]) {
+		String helper[] = strUtil.explode(config, "|")
+		String comps[] = strUtil.explode(helper[0].string, ",")
+		for (int i = 0; i < comps.arrayLength; i++) {
+			if (strUtil.find(comps[i].string, "distributor_proxies") != StringUtil.NOT_FOUND) {
+				return true
+			}
+		}
+		return false
+	}
+
+	char[] getFormatedIPs(String ips[], int numIPs) {
+		char result[] = null
+		for (int i = 0; i <= numIPs; i++) {
+			if (i == 0) { result = new char[](result, ips[i].string) }
+			else { result = new char[](result, ",", ips[i].string) }
+		}
+		return result
+	}
+
+	String[] generateVariants(char config[], String ips[]) {
+		String result[] = new String[ips.arrayLength-1]()
+		for (int i = 0; i < ips.arrayLength-1; i++) {
+			result[i] = new String(new char[]("|", getFormatedIPs(ips, i+1), config))
+		}
+		return result
+	}
+
+	String[] addDistributedConfigs(String configs[], String ips[]) {
+		String result[] = null
+		String variants[] = null
+		for (int i = 0; i < configs.arrayLength; i++) {
+			if (isDistributed(configs[i].string)) {
+				variants = generateVariants(configs[i].string, ips)
+				result = new String[](result, variants)
+			} else {
+				result = new String[](result, configs[i])
+			}
+		}
+		return result	
+	}
+
+	void Learning:learns() {
+		sys = new RESys(IP, PORT)
+		out.println("$(debugMSG) RESys started!")
+		sys.setMain("../repository/TCPNetwork.o")
+		out.println("$(debugMSG) Repository built!")
+		out.println("$(debugMSG) Got all configs!")
+
+		String ips[] = new String[](new String("scc-mc1.lancs.ac.uk"), 
+			new String("scc-mc2.lancs.ac.uk:2013"), new String("scc-mc3.lancs.ac.uk"),
+			new String("scc-mc4.lancs.ac.uk:2013"), new String("scc-mc5.lancs.ac.uk:2013"),
+			new String("scc-mc6.lancs.ac.uk:2013"), new String("scc-mc7.lancs.ac.uk:2013"),
+			new String("scc-mc8.lancs.ac.uk:2013"))
+
+		sys.setIpList(ips)
+		configList = sys.getAllConfigs()
+
+		loadTable()
+		out.println("$(debugMSG) Table loaded!")
+
+		proxyList = sys.getProxies()
+		out.println("$(debugMSG) Got all proxies!")
+		sys.addProxy(getProxyExp())
+		out.println("$(debugMSG) Proxy set!")
+
+		out.println("$(debugMSG) ------------")
+		out.println("$(debugMSG) Learning cycle started!")
+		out.println("$(debugMSG) ------------")
+		out.print("$(debugMSG) Press ENTER to start...")
+		in.readln()
+		sys.getPerceptionData()//cleaning data...
+
+		out.println("$(debugMSG) starting learning...")
+		log = new TextFile("ucb_results.data", File.FILE_ACCESS_WRITE)
+		Thread learningThread = asynch::start()
+	
+		out.println("$(debugMSG) Press ENTER to finish...")
+		in.readln()
+
+		exit = true
+		learningThread.join()
+		log.close()
+	}
+}

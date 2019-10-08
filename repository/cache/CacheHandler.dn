@@ -1,0 +1,69 @@
+
+component provides cache.CacheHandler requires io.Output out, data.IntUtil iu {
+	static CachedData cache
+	static Mutex cacheLock = new Mutex()
+
+	CachedData CacheHandler:get(char key[]) {
+		mutex(cacheLock) {
+			for (CachedData cr = cache; cr != null; cr = cr.next) {
+				if (cr.key == key) { return cr }
+			}
+		}
+		return null
+	}
+
+	void CacheHandler:update(CachedData ncr) {
+		mutex(cacheLock) {
+			for (CachedData cr = cache; cr != null; cr = cr.next) {
+				if (cr.key == ncr.key) {
+					cr.response = ncr.response
+					cr.resourceAge = ncr.resourceAge
+					return
+				}
+			}
+			//not found add it
+			// copy ncr content to avoid read-only exception
+			// because ncr was created on another component
+			CachedData newEntry = new CachedData()
+			newEntry.command = ncr.command
+			newEntry.key = ncr.key
+			newEntry.resourceAge = ncr.resourceAge
+			newEntry.mimeType = ncr.mimeType
+			newEntry.responseHeader = ncr.responseHeader
+			newEntry.response = ncr.response
+			newEntry.contentSize = ncr.contentSize
+			newEntry.contentType = ncr.contentType
+			newEntry.next = cache
+			if (cache != null) { cache.prev = newEntry }
+			cache = newEntry
+		}
+	}
+
+	void CacheHandler:delete(char key[]) {
+		mutex(cacheLock) {
+			for (CachedData cr = cache; cr != null; cr = cr.next) {
+				if (cr.key == key) { 
+					cr = cr.next
+					if (cr == null) {
+						cache = null
+						break
+					}
+				}
+			}
+		}
+	}
+
+	String[] CacheHandler:getKeys() {
+		String keys[] = null
+		mutex(cacheLock) {
+			for (CachedData cr = cache; cr != null; cr = cr.next) {
+				keys = new String[](keys, new String(cr.key))
+			}
+		}
+		return keys
+	}
+
+	void CacheHandler:clear() {
+		mutex(cacheLock) { cache = null }
+	}
+}

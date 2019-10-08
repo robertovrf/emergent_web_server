@@ -1,0 +1,190 @@
+// Learning
+//
+// This component implements the Learning module.
+// 
+// Author: Roberto Rodrigues Filho
+// March @ 2017
+
+const char debugMSG[]			= "[@Learning]"
+/* learning parameters values */
+const int TRESHOLD 				= 3
+const int COLLECTION_TIME 		= 5000
+/* system info */
+const char IP[]  				= "scc-mc1.lancs.ac.uk" // emergent system
+//const char IP[]  				= "localhost"
+const int PORT 					= 2011
+/* learning stages */
+const char EXIT[] 				= "exit"
+const char STARTEXPLORING[] 	= "start_exploring"
+const char EXPLORATION[] 		= "exploration"
+const char EXPLOITATION[] 		= "exploitation"
+
+component provides learning.Learning requires io.Output out, data.IntUtil iu, time.Timer t, 
+	learning.LearningCore, rest.RESys, data.StringUtil strUtil, io.File, 
+	data.json.JSONParser parser, data.DecUtil du, io.Input in {
+
+	// external modules
+	LearningCore core 		= null // this is responsible to makeDecision based on the collected data
+	// control variables
+	String configList[] 	= null // this won't change
+	String proxyList[] 		= null // this won't change
+	char mode[] 			= null // this controls the learning status
+	char currentConfig[]	= null // stores the current config in array
+	int exceeded 			= 0
+	RESys sys 				= null
+	/* exceeded controls how many times the system can suffer */
+	/* from fluctuations before it changes */
+
+	void waitCollection() {
+		t.sleep(COLLECTION_TIME)
+	}
+
+	//NOTE: the way this code is organised we're calling functions twice in LearningCore...
+	// only function that is allowed to change mode variable (phase) is the process function
+	void process(char perceptionData[]) {
+		writeToFile(parsePerceptionData(perceptionData)) //added here...
+		if (mode == STARTEXPLORING) {
+			char followupAction[] = core.considerData(currentConfig, perceptionData)
+			if (followupAction == LearningCore.CLASS_DETECTED) {
+				currentConfig = core.bestConfig(perceptionData)
+				sys.setConfig(currentConfig)// this was added here
+				mode = EXPLOITATION
+			} else if (followupAction == LearningCore.CONTINUE_EXPLORATION) {
+				core.exploring(currentConfig, perceptionData)
+				mode = EXPLORATION
+			}
+		} else if (mode == EXPLORATION) {
+			core.exploring(currentConfig, perceptionData)
+			// explorationVisitedAllConfigs for a specific cycle.
+			if (core.explorationVisitedAllConfigs()) {
+				out.println("$(debugMSG) Processing explored data...")
+				char cycleResult[] = core.exploit()
+				core.latestCycleResult(cycleResult)
+				if (core.isLastCycle()) {
+					out.println("$(debugMSG) Changing to EXPLOITATION MODE!")
+					currentConfig = cycleResult
+					core.pushWinningArchToKNowledge() // this was added here
+					sys.setConfig(currentConfig) // only place in process that calls setConfig
+					mode = EXPLOITATION
+					printInfoArchicture(currentConfig) // debug
+				}
+			}
+		} else if (mode == EXPLOITATION) {
+			char status[] = core.checkSysStatus(perceptionData, currentConfig)
+			if (status == LearningCore.CONTINUE_EXPLOITATION) {
+				out.println("$(debugMSG) CONTINUE EXPLOITATION!")
+				exceeded = 0
+			} else {
+				exceeded++
+				if (exceeded == TRESHOLD) {
+					exceeded = 0
+					if (status == LearningCore.TRIGGER_EXPLORATION) {
+						out.println("$(debugMSG) Triggered Exploration")
+						mode = STARTEXPLORING
+					} else {
+						out.println("$(debugMSG) Changed to best configuration for the detected pattern.")
+						currentConfig = status
+						sys.setConfig(status)
+					}
+				}
+			}
+		}
+	}
+
+	void printInfoArchicture(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/http/handler/GET/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				out.println("$(debugMSG) Changed to: $(helper[helper.arrayLength-1].string)")
+				return
+			}
+		}
+		out.println("$(debugMSG) Something bad's happened!")
+	}
+
+	// should return only the exp!
+	char[] getProxyExp() {
+		//return new char[]("|../metacom/monitoring/proxies/HTTPProxy.o|1(*:HTTPHandler[0]:*)|")
+		return new char[]("|../metacom/monitoring/proxies/HTTPProxy.o|*(*:HTTPGET[0]:*)|")
+	}
+
+	// WARNING: if this is on the exploration phase and you keep calling this function it will cycle forever...
+	char[] getConfig() {
+		if (mode == STARTEXPLORING) { currentConfig = core.explorationRestart() }
+		else if (mode == EXPLORATION) {	currentConfig = core.explorationGetNext() }
+		else if (mode == EXPLOITATION) { /* just return current */ }
+		return currentConfig
+	}
+
+	void Learning:learns() {
+		sys = new RESys(IP, PORT)
+		out.println("$(debugMSG) RESys started!")
+		// TODO: this is currently hard coded (change this in the near future)
+		//sys.setMain("../web_server/WebServer.o") 
+		sys.setMain("../repository/TCPNetwork.o")
+		out.println("$(debugMSG) Repository built!")
+		configList = sys.getAllConfigs()
+		out.println("$(debugMSG) Got all configs!")
+		proxyList = sys.getProxies()
+		out.println("$(debugMSG) Got all proxies!")
+
+		String ips[] = new String[](new String("scc-mc1.lancs.ac.uk"),
+			new String("scc-mc2.lancs.ac.uk:2013"),
+			new String("scc-mc3.lancs.ac.uk:2013"),
+			new String("scc-mc4.lancs.ac.uk:2013"))
+
+		core = new LearningCore(configList, ips)
+		
+		mode = STARTEXPLORING
+		sys.addProxy(getProxyExp())
+		out.println("$(debugMSG) Set proxy!")
+		out.println("$(debugMSG) ------------")
+		out.println("$(debugMSG) Learning cycle started!")
+		out.println("$(debugMSG) ------------")
+		out.print("$(debugMSG) waiting to start... ")
+		in.readln()
+		sys.getPerceptionData()//cleaning data...
+		out.println("$(debugMSG) starting learning...")
+		// learning cycle ...
+		while (mode != EXIT) {
+			if ((mode == EXPLORATION) || (mode == STARTEXPLORING)) { 
+				char config[] = getConfig()
+				//writeToFile(new char[]("Arch: ", config))
+				sys.setConfig(config)
+			}
+			else if (mode == EXPLOITATION) { /* does nothing ... */ }
+			else { throw new Exception("Invalid phase.") }
+			waitCollection()
+			process(sys.getPerceptionData())
+		}
+	}
+
+	char[] parsePerceptionData(char perceptionData[]) {
+		if (perceptionData == "{}") { return new char[]("{}") }
+		char result[] = ""
+		dec value = 0
+		int count = 0
+		JSONElement document = parser.parseDocument(perceptionData)
+		JSONElement metricsJSON = parser.getValue(document, "metrics")
+		if (metricsJSON != null) {
+			for (int pointer = 0; pointer < metricsJSON.children.arrayLength; pointer++) {
+				JSONElement childrenMetrics = metricsJSON.children[pointer]
+				result = new char[](parser.getValue(childrenMetrics, "source").value, ", ")
+				value = du.decFromString(parser.getValue(childrenMetrics, "value").value)
+				count = iu.intFromString(parser.getValue(childrenMetrics, "count").value)
+				dec metricValue = value/count
+				result = new char[](result, du.decToString(metricValue))
+			}
+		}
+		return result
+	}
+
+	void writeToFile(char someText[]) {
+		File fd = new File("result1.data", File.FILE_ACCESS_WRITE)
+        fd.setPos(fd.getSize())
+        fd.write(someText)
+        fd.write("\n")
+        fd.close()
+	}
+}

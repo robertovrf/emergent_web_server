@@ -1,0 +1,56 @@
+const char debugMSG[] = "[@Injector]"
+
+// TODO:
+// I need to be able to inject multiple states in multiple components
+// Currently I can only inject in one class B and one class A
+// in the near future I will need to inject in multiple class B and multiple class As
+component provides injector.Injector requires io.Output out, data.IntUtil iu,
+	oracle.Mapping, oracle.Oracle, remote.Remote, distributor_proxies.Proxy {
+
+	Mapping mapping = null
+	ProxyInfo infos[] = null
+
+	Data[] Injector:getData() {
+		return infos
+	}
+
+	void Injector:triggerAdaptation() {
+		emitevent triggerChangeState()
+	}
+
+	void Injector:toInjectData(Data dt[]) {
+		infos = dt
+	}
+
+	void Injector:toInjectObject(Object object) {
+		mapping = object
+	}
+
+	bool Injector:shouldInject(IDC comp) {
+		if (comp.hasProvides("oracle.Oracle")) {
+			return true
+		} else if (comp.hasProvides("remote.Remote")) {
+			return true
+		} else if (comp.hasProvides("distributor_proxies.Proxy")) {
+			return true
+		}
+		return false 
+	}
+
+	void Injector:inject(IDC comp) {
+		if (comp.hasProvides("oracle.Oracle")) {
+			out.println("$(debugMSG) Setting Mapping to Oracle in the architecture!")
+			Oracle oracle = new Oracle() from comp
+			oracle.setMapping(mapping)
+			ProxyInfo infosIn[] = mapping.getInfo()
+		} else if (comp.hasProvides("remote.Remote")) {
+			out.println("$(debugMSG) Setting ProxyInfo to Remote in the architecture!")
+			Remote remote = new Remote() from comp
+			remote.setAddresses(infos)
+		} else if (comp.hasProvides("distributor_proxies.Proxy")) {
+			out.println("$(debugMSG) Setting Mapping to Proxy in the architecture!")
+			Proxy proxy = new Proxy() from comp
+			proxy.setInfo(infos, null)
+		}
+	}
+}

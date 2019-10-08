@@ -1,0 +1,5 @@
+uses distributor_proxies.Proxy
+
+interface Remote {
+	void setAddresses(ProxyInfo newInfos[])
+}

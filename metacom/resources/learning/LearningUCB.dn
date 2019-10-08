@@ -1,0 +1,24 @@
+uses data.String
+
+data CoreRLData {
+	dec rewards[]
+	dec counts[]
+	dec totalCount
+}
+
+data MLState {
+	CoreRLData learningData
+	String actions[]
+	int currentState
+	int currentAction
+}
+
+interface LearningUCB {
+	LearningUCB(MLState state)
+	void setExplorationPenalty(dec penalty)
+	void setActions(String actions[])
+	int getAction()
+	void consumeData(dec reward)
+	int[] getTopActions(int n)
+	MLState getState()
+}

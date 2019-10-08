@@ -1,0 +1,111 @@
+This file lists the average response time and the number of connection fails/s of a WS and a LB architecture subjected to a given workload.
+
+Workload: med_image.jpg (1.7MB)
+
+Load Balancer
+* LB config: 
+	|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGETLB.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/io/File.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o,../repository/scheduler/RoundRobin.o,../repository/scheduler/SchedulerUtil.o,/home/roberto/dana/components/util/ConfigFile.o,/home/roberto/dana/components/io/TextFile.o,/home/roberto/dana/components/data/adt/HashTable.o,./external_references/autogen/ER3.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,6:HTTPUtil:7,7:FileSystem:8,7:StringUtil:9,9:List:10,6:Scheduler:11,11:TCPSocket:1,11:SchedulerUtil:12,12:FileSystem:8,12:ConfigFile:13,13:TextFile:14,14:File:8,13:StringUtil:9,13:HashTable:15,12:ER:16,6:StringUtil:9,4:HTTPUtil:7|
+* LB config desc: 
+	LB with RoundRobin balancing load between two servers.
+* Perception data:
+	{"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":85286, "count":207, "preferHigh":false, "startTime": "2017-4-23 19:8:30", "endTime": "2017-4-23 19:8:33"}], "events": [{"name": "image", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":207, "startTime": "2017-4-23 19:8:30", "endTime": "2017-4-23 19:8:33"}]}
+* Number of fail connection: 0
+* Raw client output:
+	bytes received in last second: 17059968 | files: 0 | 0
+	bytes received in last second: 6106123 | files: 1 | 0
+	bytes received in last second: 29827255 | files: 5 | 0
+	bytes received in last second: 22013291 | files: 33 | 0
+	bytes received in last second: 295743 | files: 30 | 0
+	bytes received in last second: 0 | files: 0 | 0
+	bytes received in last second: 14548736 | files: 0 | 0
+	bytes received in last second: 22863510 | files: 2 | 0
+	bytes received in last second: 9362827 | files: 1 | 0
+	bytes received in last second: 9879830 | files: 2 | 0
+	bytes received in last second: 7084800 | files: 3 | 0
+	bytes received in last second: 24969494 | files: 2 | 0
+	bytes received in last second: 25813409 | files: 3 | 0
+	bytes received in last second: 5699906 | files: 6 | 0
+
+Web Server
+* WS config:
+	|../repository/TCPNetwork.o,/home/roberto/dana/components/net/TCP.o,../repository/request/RequestHandlerPT.o,../repository/app_protocols/HTTPProtocol.o,../repository/http/HTTPHeader1_0.o,../repository/http/HTTPInterpreter.o,../repository/http/handler/GET/HTTPGET.o,../repository/http/util/HTTPUtil.o,/home/roberto/dana/components/io/File.o,/home/roberto/dana/components/data/StringUtil.o,/home/roberto/dana/components/data/adt/List.o|0:TCPSocket:1,0:TCPServerSocket:1,0:RequestHandler:2,2:AppProtocol:3,3:HTTPHeader:4,4:HTTPInterpreter:5,5:HTTPGET:6,4:HTTPUtil:7,7:FileSystem:8,7:StringUtil:9,9:List:10,6:File:8|
+* WS config desc:
+	WS with default config (i.e. no compression and no cache)
+* Perception data:
+	{"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":10419, "count":241, "preferHigh":false, "startTime": "2017-4-23 19:8:38", "endTime": "2017-4-23 19:8:40"}], "events": [{"name": "image", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":243, "startTime": "2017-4-23 19:8:38", "endTime": "2017-4-23 19:8:40"}]}
+* Number of fail connection:
+* Raw client output: 23 - 92
+	bytes received in last second: 12130136 | files: 80 | 72
+	bytes received in last second: 3675531 | files: 32 | 27
+	bytes received in last second: 25311448 | files: 74 | 65
+	bytes received in last second: 6182283 | files: 68 | 62
+	bytes received in last second: 1702923 | files: 35 | 27
+	bytes received in last second: 21542572 | files: 79 | 74
+	bytes received in last second: 16519607 | files: 54 | 46
+	bytes received in last second: 689280 | files: 59 | 48
+	bytes received in last second: 3043650 | files: 93 | 87
+	bytes received in last second: 12950583 | files: 29 | 18
+	bytes received in last second: 26854020 | files: 68 | 57
+	bytes received in last second: 19476067 | files: 77 | 63
+	bytes received in last second: 1614976 | files: 30 | 23
+	bytes received in last second: 25824589 | files: 81 | 74
+	bytes received in last second: 16074796 | files: 99 | 92
+	bytes received in last second: 10262060 | files: 40 | 29
+
+
+
+
+
+
+
+
+
+
+---------------------
+
+
+
+
+
+(LB - roundrobin)
+mc1: 8318/1300 = 6.3 ms (total)
+mc1 alone: 5.9 ms
+ DATA: {"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":8318, "count":1300, "preferHigh":false, "startTime": "2017-4-25 18:37:48", "endTime": "2017-4-25 18:38:1"}], "events": [{"name": "text", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":1300, "startTime": "2017-4-25 18:37:48", "endTime": "2017-4-25 18:38:1"}]}
+
+(HTTPGET -- default)
+mc2: 628/1300 = 0.4 ms
+DATA: {"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":628, "count":1300, "preferHigh":false, "startTime": "2017-4-25 18:37:48", "endTime": "2017-4-25 18:38:1"}], "events": [{"name": "text", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":1300, "startTime": "2017-4-25 18:37:48", "endTime": "2017-4-25 18:38:1"}]}
+
+
+second round
+
+(LB - roundrobin)
+mc1: 8294/1100 = 7.54
+mc1 alone: 6.87
+DATA: {"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":8294, "count":1100, "preferHigh":false, "startTime": "2017-4-25 18:46:12", "endTime": "2017-4-25 18:46:23"}], "events": [{"name": "text", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":1100, "startTime": "2017-4-25 18:46:12", "endTime": "2017-4-25 18:46:23"}]}
+
+(HTTPGET -- default)
+mc2: 737/1100 = 0.67
+DATA: {"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":737, "count":1100, "preferHigh":false, "startTime": "2017-4-25 18:46:12", "endTime": "2017-4-25 18:46:23"}], "events": [{"name": "text", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":1100, "startTime": "2017-4-25 18:46:12", "endTime": "2017-4-25 18:46:23"}]}
+
+---
+(LB - roundrobin)
+mc1: 10217/1400 = 7.2
+mc1 alone: 6.4
+DATA: {"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":10217, "count":1400, "preferHigh":false, "startTime": "2017-4-25 18:52:20", "endTime": "2017-4-25 18:52:34"}], "events": [{"name": "text", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":1400, "startTime": "2017-4-25 18:52:20", "endTime": "2017-4-25 18:52:34"}]}
+
+(HTTPGETCMP -- compression with zlib)
+mc2: 1157/1400: 0.8
+DATA: {"metrics": [{"name": "response_time", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":1157, "count":1400, "preferHigh":false, "startTime": "2017-4-25 18:52:20", "endTime": "2017-4-25 18:52:34"}], "events": [{"name": "text", "source": "../metacom/monitoring/proxies/HTTPProxy.o", "value":0, "count":1400, "startTime": "2017-4-25 18:52:20", "endTime": "2017-4-25 18:52:34"}]}
+
+
+
+
+
+
+
+
+
+
+
+	

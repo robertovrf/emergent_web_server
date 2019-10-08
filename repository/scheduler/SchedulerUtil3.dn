@@ -1,0 +1,57 @@
+const char debugMSG[] = "[@SchedulerUtil]"
+
+uses data.String
+
+//external_references.autogen.ERChecker 
+//, external_references.autogen.ER:http eRefs {
+component provides scheduler.SchedulerUtil requires io.Output out, data.IntUtil iu, io.FileSystem fileSystem {
+
+	implementation SchedulerUtil {
+		ServerInfo serverInfo[]
+		bool started = false
+		// read from the config file and 
+
+		/*
+			data ServerInfo {
+				char ip[]
+				int port
+				char name[]
+			}
+		*/
+		void setup() {
+			if (!started) {
+				serverInfo = new ServerInfo[3]()
+				serverInfo[0] = new ServerInfo()
+				serverInfo[0].ip 	= "scc-mc2.lancs.ac.uk"
+				serverInfo[0].port	= 2012
+				serverInfo[0].name 	= "mc2"
+				serverInfo[1] = new ServerInfo()
+				serverInfo[1].ip 	= "scc-mc3.lancs.ac.uk"
+				serverInfo[1].port	= 2012
+				serverInfo[1].name 	= "mc3"
+				serverInfo[2] = new ServerInfo()
+				serverInfo[2].ip 	= "scc-mc4.lancs.ac.uk"
+				serverInfo[2].port	= 2012
+				serverInfo[2].name 	= "mc4"
+				started = true
+			}
+		}
+
+		int SchedulerUtil:getNumServers() {
+			setup()
+			if (serverInfo != null) { return serverInfo.arrayLength }
+			return 0
+		}
+
+		ServerInfo SchedulerUtil:getServer(int index) {
+			setup()
+			if (serverInfo == null) { return null }
+			if (index >= serverInfo.arrayLength) {
+				out.println(new char[]("$(debugMSG) Error: requested a server",
+					" index that does not exist (index = $(iu.intToString(index)))"))
+				return null
+			}
+			return serverInfo[index]
+		}
+	}
+}
