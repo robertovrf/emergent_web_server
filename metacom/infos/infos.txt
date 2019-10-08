@@ -1,0 +1,7 @@
+::::::::::::::::::::REDIR::::::::::::::::::::
+
+redir --lport=3306 --laddr=scc-mc10.lancs.ac.uk --cport=3306 --caddr=localhost
+
+::::::::::::::::::::PEL Queries that was tested!::::::::::::::::::::
+
+1) add_proxy |../metacom/monitoring/proxies/HTTPProxy.o|*(*:http.handler.GET.HTTPGET[0]:*)|
