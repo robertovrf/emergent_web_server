@@ -1,7 +1,8 @@
 component provides App requires io.Output out, net.http.HTTPRequest http, data.IntUtil iu,
 	time.Calendar calendar, time.DateUtil dateUtil {
 
-	char server[] = "scc-mc1.lancs.ac.uk"
+	//char server[] = "scc-mc1.lancs.ac.uk"
+	char server[] = "localhost"
 	int NUM_THREADS = 5
 
 	void makeRequest(char resource[], int id) {

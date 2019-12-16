@@ -1,4 +1,0 @@
-interface Prime {
-	bool isPrime(int number)
-	int howManyPrimes(int number)
-}

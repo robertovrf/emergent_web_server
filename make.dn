@@ -6,9 +6,18 @@ const char debugMSG[] = "[@make]"
 
 component provides App requires io.Output out, data.IntUtil iu, util.ConfigFile, os.Run run, data.StringUtil strUtil {
 
+	char[] windowsPathCorrector(char path[]) {
+		char newPath[] = new char[path.arrayLength]()
+		for (int i = 0; i < path.arrayLength; i++) {
+			if (path[i] == "/") { newPath[i] = "\\" }
+			else { newPath[i] = path[i] }
+		}
+		return newPath
+	}
+
 	int App:main(AppParam params[]) {
-		if (params.arrayLength == 0) {
-			out.println("$(debugMSG) ERROR: Run 'dana make.o configfile.config'")
+		if (params.arrayLength != 2) {
+			out.println("$(debugMSG) ERROR: Run 'dana make.o -l configfile.config'")
 			return 1
 		}
 		out.println("$(debugMSG) Repository compilation process started.")
@@ -18,13 +27,16 @@ component provides App requires io.Output out, data.IntUtil iu, util.ConfigFile,
 			if (rS.executed) {
 				out.println("$(debugMSG) Repository compilation process finished.")
 				out.println("$(debugMSG) Filtering components according to config file...")
-				ConfigFile cFile = new ConfigFile(params[0].string)
+				ConfigFile cFile = new ConfigFile(params[1].string)
 				char compListStr[] = cFile.getValue("components")
 				String comps[] = strUtil.explode(compListStr, ",")
 				char comp[] = null
 				for (int i = 0; i < comps.arrayLength; i++) {
 					comp = strUtil.trim(comps[i].string)
-					RunStatus rS2 = run.execute("rm $(comp)")
+					RunStatus rS2
+					if (params[0].string == "-w") { rS2 = run.execute("del $(windowsPathCorrector(comp))") }
+					else if (params[0].string == "-l") { rS2 = run.execute("rm $(comp)") }
+					else { throw new Exception("$(debugMSG) Invalid parameters.") }
 					if (rS2.executed) {	out.println("$(debugMSG) $(comp) deleted!") }
 				}
 			}

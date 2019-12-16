@@ -114,7 +114,9 @@ component provides App requires io.Output out, data.IntUtil iu, io.Input in, dat
 					oFile = new TextFile(new char[](cmdList[2].string, "_", iu.intToString(i), ".data"), File.WRITE)
 					for (int j = 0; j < cycles; j++) {
 						t.sleep(5000)
-						handlePerception(distributor.getPerceptionData())
+						char percData[] = distributor.getPerceptionData()
+						out.println("$debugMSG $percData")
+						handlePerception(percData)
 					}
 					oFile.close()
 				}

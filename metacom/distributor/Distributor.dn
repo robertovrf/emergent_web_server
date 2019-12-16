@@ -43,8 +43,7 @@ component provides distributor.Distributor requires io.Output out, data.IntUtil 
 			mapRefs[i] = new RefIDC()
 			out.println("$(debugMSG) $(refs[i].proxyClient)")
 			mapRefs[i].proxyCl = recLoader.load(refs[i].proxyClient).mainComponent
-			if ((refs[i].proxyServer != "distributor_proxies/HTTPGETSP.o") &&
-				(refs[i].proxyServer != "distributor_proxies/PrimeSP.o")) {
+			if (refs[i].proxyServer != "distributor_proxies/HTTPGETSP.o") {
 				out.println("$(debugMSG) $(refs[i].proxyServer)")
 				mapRefs[i].proxySer = recLoader.load(refs[i].proxyServer).mainComponent	
 			}
@@ -180,8 +179,7 @@ component provides distributor.Distributor requires io.Output out, data.IntUtil 
 	void Distributor:setIpList(String ips[]) {
 		ipList = ips
 		// TODO: (HOW??) add all client proxies for each interface of the target application
-		//perception.addComp(new String[](new String("distributor_proxies/HTTPGETCPLB.o")))
-		perception.addComp(new String[](new String("distributor_proxies/PrimeCP.o")))
+		perception.addComp(new String[](new String("distributor_proxies/HTTPGETCPLB.o")))
 		configs = perception.getAllConfigs()
 		configs = addDistributedConfigs(configs, ipList)
 		// TODO: get starting port number and local ip address
@@ -244,8 +242,8 @@ component provides distributor.Distributor requires io.Output out, data.IntUtil 
 			StartInfo startInfo 	= new StartInfo()
 			startInfo.className 	= RESLauncher.CLASS_A
 			startInfo.appName 		= "EmergentSys"
-			//startInfo.startCommand 	= "../repository/HTTPGETREMOTE.o"//this is actually the argument?
-			startInfo.startCommand 	= "../repository/PRIMEREMOTE.o"
+			startInfo.startCommand 	= "../repository/HTTPGETREMOTE.o"//this is actually the argument?
+			//startInfo.startCommand 	= "../repository/PRIMEREMOTE.o"
 			startInfo.ip 			= ipPort[0].string
 			AppStarted appStarted 	= resl.start(startInfo)
 			// launch the EmergentSys and get its port address

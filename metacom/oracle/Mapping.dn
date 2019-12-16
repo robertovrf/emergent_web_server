@@ -2,7 +2,6 @@ uses distributor_proxies.Proxy
 
 uses net.TCPSocket
 uses http.handler.GET.HTTPGET
-uses prime.Prime
 
 component provides oracle.Mapping requires data.StringUtil strUtil, data.IntUtil iu, io.Output out {
 	static Reference refs[] = null
@@ -31,13 +30,11 @@ component provides oracle.Mapping requires data.StringUtil strUtil, data.IntUtil
 	}
 
 	void loadRefs() {
-		refs = new Reference[3]
+		refs = new Reference[2]
 		refs[0] = new Reference("net", "TCPSocket", "distributor_proxies/TCPSocketCP.o", 
 				"distributor_proxies/TCPSocketSP.o", null, typeof(TCPSocket), null, null)
 		refs[1] = new Reference("http.handler.GET", "HTTPGET", "distributor_proxies/HTTPGETCPLB.o", 
 				"distributor_proxies/HTTPGETSP.o", null, typeof(HTTPGET), null, null)
-		refs[2] = new Reference("prime.Prime", "Prime", "distributor_proxies/PrimeCP.o", 
-				"distributor_proxies/PrimeSP.o", null, typeof(Prime), null, null)
 	}
 
 	bool equalTypes(Type t, Type t2) {
@@ -81,17 +78,6 @@ component provides oracle.Mapping requires data.StringUtil strUtil, data.IntUtil
 			newRef.proxyCl = refs[1].proxyCl
 			newRef.proxySer = refs[1].proxySer
 			return newRef
-		} else if (equalTypes(to.t, typeof(Prime))) {
-			Reference newRef = new Reference()
-			newRef.obj = to.o
-			newRef.intfPackage = refs[2].intfPackage
-			newRef.intf = refs[2].intf
-			newRef.proxyClient = refs[2].proxyClient
-			newRef.proxyServer = refs[2].proxyServer
-			newRef.type = refs[2].type
-			newRef.proxyCl = refs[2].proxyCl
-			newRef.proxySer = refs[2].proxySer
-			return newRef
 		}
 		return null
 	}
@@ -111,11 +97,6 @@ component provides oracle.Mapping requires data.StringUtil strUtil, data.IntUtil
 		} else if (intf == "http.handler.GET.HTTPGET") {
 			obj = new HTTPGET() from refs[1].proxyCl
 			Proxy proxy = refs[1].proxyCl.getInterface(obj, "distributor_proxies.Proxy", typeof(distributor_proxies.Proxy))
-			proxy.setInfo(new ProxyInfo(helper[1].string, iu.intFromString(helper[2].string)), "")
-			return obj
-		} else if (intf == "prime.Prime") {
-			obj = new Prime() from refs[2].proxyCl
-			Proxy proxy = refs[2].proxyCl.getInterface(obj, "distributor_proxies.Proxy", typeof(distributor_proxies.Proxy))
 			proxy.setInfo(new ProxyInfo(helper[1].string, iu.intFromString(helper[2].string)), "")
 			return obj
 		}
