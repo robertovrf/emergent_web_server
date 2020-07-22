@@ -2,6 +2,6 @@ uses stream.Stream
 uses data.adt.HashTable
 
 interface DanaPedia {
-	void pageNotFound(Stream doc)
-	void action(HashTable hashedHTTPData, Stream doc)	
+	void pageNotFound(stream.Stream doc)
+	void action(HashTable hashedHTTPData, stream.Stream doc)	
 }

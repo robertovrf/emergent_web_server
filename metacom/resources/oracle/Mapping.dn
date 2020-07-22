@@ -15,10 +15,10 @@ interface Mapping {
 	Reference getReference(TypeObj t)
 	Object getObject(char intf[])
 	Reference[] getRefs()
-	void setRefsIDC(RefIDC refsIDC[], PortManager portManager)
+	void setRefsIDC(store RefIDC refsIDC[], store PortManager portManager)
 	/* port manager functions */
 	ProxyInfo[] generatePorts(int num)
 	char[] getLocalAddress()
 	ProxyInfo[] getInfo()
-	void setInfos(ProxyInfo newInfo[])
+	void setInfos(store ProxyInfo newInfo[])
 }

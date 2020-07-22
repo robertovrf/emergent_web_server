@@ -14,7 +14,7 @@ data Reference {
 }
 
 interface Oracle {
-	void setMapping(Mapping newMapping)
+	void setMapping(store Mapping newMapping)
 	Reference[] extractReferences(Data d)
 	Reference getReference(Type t, Object o)
 	Object getObject(char intf[])

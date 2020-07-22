@@ -19,5 +19,5 @@ interface Distributor {
 
 	/* Distributor functions */
 	Distributor(char IP[])
-	void setIpList(String ips[])
+	void setIpList(store String ips[])
 }

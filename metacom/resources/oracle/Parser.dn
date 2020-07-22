@@ -8,6 +8,6 @@ data Map {
 interface Parser {
 	Data[] jsonToArray(char json[], Type t, Map map[])
 	Data jsonToData(char json[], Type t, Map map[])
-	char[] jsonFromArray(Data d[], ProxyInfo infos[])
-	char[] jsonFromData(Data d, ProxyInfo infos[])
+	char[] jsonFromArray(Data d[], store ProxyInfo infos[])
+	char[] jsonFromData(Data d, store ProxyInfo infos[])
 }

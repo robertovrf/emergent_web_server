@@ -39,7 +39,7 @@ component provides scheduler.Scheduler requires io.Output out, data.IntUtil iu, 
 		return server
 	}
 
-	void addToServerMap(ServerInfo sI, char resource[]) {
+	void addToServerMap(store ServerInfo sI, char resource[]) {
 		// this shouldn't be necessary
 		if (serverMap == null) { startServerMap() }
 		serverMap[smIndex].sI = sI

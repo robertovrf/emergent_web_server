@@ -491,8 +491,10 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 		app = new App() from main
 		// in case the object app has a secondary interface Service
 		if (main.hasProvides("Service")) {
-			Service service = main.getInterface(app, "Service", typeof(Service))
-			if (service != null) { service.start() }
+			//TODO: update for v234
+			main.callInterface(app, "Service", typeof(Service), Service.[start()], null)
+			//Service service = main.getInterface(app, "Service", typeof(Service))
+			//if (service != null) { service.start() }
 		}
 		app.main(params)
 		// TODO: the Assembly module should pass parameters when starting an app
@@ -784,7 +786,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	// when inserting component in config, create a new Component object and copy the info from comp to the 
 	// component that will be inserted into the config. also, remember that we need to insert the component 
 	// name and how it relates to other components in the string
-	void insertComponentInConfig(Component comp, char requirerCompName[], char intfAlias[], char intfSemantic[], int configPointer) {
+	void insertComponentInConfig(store Component comp, char requirerCompName[], char intfAlias[], char intfSemantic[], int configPointer) {
 		// inserting object
 		Component c = new Component()
 		c.name = new char[](comp.name)

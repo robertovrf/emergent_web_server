@@ -22,8 +22,8 @@ data ProxyInfo {
 
 interface Proxy {
 	void stop()
-	void setObject(Object o)
+	void setObject(store Object o)
 	//void setInfo(ProxyInfo pInfo)
-	void setInfo(ProxyInfo pInfo[], char myAddr[])
+	void setInfo(store ProxyInfo pInfo[], char myAddr[])
 	void start()
 }

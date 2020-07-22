@@ -3,6 +3,11 @@ uses distributor_proxies.Proxy
 uses net.TCPSocket
 uses http.handler.GET.HTTPGET
 
+data SetInfoParams {
+	ProxyInfo pInfo[]
+	char myAddr[]
+}
+
 component provides oracle.Mapping requires data.StringUtil strUtil, data.IntUtil iu, io.Output out {
 	static Reference refs[] = null
 	static PortManager pManager = null
@@ -87,17 +92,19 @@ component provides oracle.Mapping requires data.StringUtil strUtil, data.IntUtil
 		String helper[] = strUtil.explode(content, "|")
 		char intf[] = helper[0].string
 		Object obj
-		IDC class
+		SetInfoParams sIP = new SetInfoParams()
 		//LoadedComponents components
 		if (intf == "net.TCPSocket") {
 			obj = new TCPSocket() from refs[0].proxyCl
-			Proxy proxy = refs[0].proxyCl.getInterface(obj, "distributor_proxies.Proxy", typeof(distributor_proxies.Proxy))
-			proxy.setInfo(new ProxyInfo(helper[1].string, iu.intFromString(helper[2].string)), "")
+			sIP.pInfo = new ProxyInfo[](new ProxyInfo(helper[1].string, iu.intFromString(helper[2].string)))
+			sIP.myAddr = ""
+			refs[0].proxyCl.callInterface(obj, "distributor_proxies.Proxy", typeof(distributor_proxies.Proxy), distributor_proxies.Proxy.[setInfo(ProxyInfo[], char[])], sIP)
 			return obj
 		} else if (intf == "http.handler.GET.HTTPGET") {
 			obj = new HTTPGET() from refs[1].proxyCl
-			Proxy proxy = refs[1].proxyCl.getInterface(obj, "distributor_proxies.Proxy", typeof(distributor_proxies.Proxy))
-			proxy.setInfo(new ProxyInfo(helper[1].string, iu.intFromString(helper[2].string)), "")
+			sIP.pInfo = new ProxyInfo[](new ProxyInfo(helper[1].string, iu.intFromString(helper[2].string)))
+			sIP.myAddr = ""
+			refs[0].proxyCl.callInterface(obj, "distributor_proxies.Proxy", typeof(distributor_proxies.Proxy), distributor_proxies.Proxy.[setInfo(ProxyInfo[], char[])], sIP)
 			return obj
 		}
 		return null

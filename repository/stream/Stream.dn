@@ -11,7 +11,7 @@ component provides stream.Stream requires data.IntUtil intUtil, io.Output out, d
 	bool streamEnded
 	TCPSocket socket
 
-	Stream:Stream(TCPSocket s) {
+	stream.Stream:Stream(TCPSocket s) {
 		autoChunked = false
 		firstWrite = true
 		streamEnded = false
@@ -58,7 +58,7 @@ component provides stream.Stream requires data.IntUtil intUtil, io.Output out, d
 		firstWrite = false
 	}
 
-	void Stream:write(char dt[]) {
+	void stream.Stream:write(char dt[]) {
 		if (streamEnded){
 			throw new Exception("Stream end has been set; no further data can be written")
 		}
@@ -71,7 +71,7 @@ component provides stream.Stream requires data.IntUtil intUtil, io.Output out, d
 		socket.send(new char[](dt, "\r\n"))
 	}
 
-	void Stream:endStream() {
+	void stream.Stream:endStream() {
 		if (!streamEnded) {
 			if (!firstWrite) {
 				if (autoChunked) { socket.send("0;\r\n\r\n") }

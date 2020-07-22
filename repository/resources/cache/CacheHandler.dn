@@ -25,7 +25,7 @@ data CachedData {
 interface CacheHandler {
 	const int MAX_SIZE = 100
 	CachedData get(char key[])
-	void update(CachedData ncr)
+	void update(store CachedData ncr)
 	void delete(char key[])
 	void clear()
 	String[] getKeys()

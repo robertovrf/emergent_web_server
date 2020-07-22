@@ -1,6 +1,6 @@
 const char debugMSG[] = "[@Oracle]"
 
-component provides oracle.Oracle requires io.Output out {
+component provides oracle.Oracle requires io.Output out, util.TypeUtil tu {
 	static Mapping mapping
 
 	void Oracle:setMapping(Mapping newMapping) {
@@ -9,7 +9,7 @@ component provides oracle.Oracle requires io.Output out {
 
 	TypeObj[] recursiveObjectSearch(Type t, TypeObj types[], Data d) {
 		for (int i = 0; i < t.fields.arrayLength; i++) {
-			TypeField tf = d.[t.fields[i].name]
+			TypeField tf = tu.getField(d, t.fields[i].name)
 			if (t.fields[i].type.class == Type.OBJECT) {
 				Object obj = d:.tf
 				types = new TypeObj[](types, new TypeObj(t.fields[i].type, obj))

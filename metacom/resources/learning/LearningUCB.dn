@@ -14,9 +14,9 @@ data MLState {
 }
 
 interface LearningUCB {
-	LearningUCB(MLState state)
+	LearningUCB(store MLState state)
 	void setExplorationPenalty(dec penalty)
-	void setActions(String actions[])
+	void setActions(store String actions[])
 	int getAction()
 	void consumeData(dec reward)
 	int[] getTopActions(int n)

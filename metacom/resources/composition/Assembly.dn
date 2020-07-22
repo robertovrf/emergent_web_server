@@ -18,5 +18,5 @@ interface Assembly {
 	void addComp(String compPaths[])
 	IDCReference[] getComponents(String paths[])
 	IDCReference[] getCompsByProvidedInterface(char providedIntf[])
-	void addInjector(Injector i)
+	void addInjector(store Injector i)
 }

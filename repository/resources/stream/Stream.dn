@@ -1,7 +1,7 @@
 uses net.TCPSocket
 
 interface Stream {
-	Stream(TCPSocket socket)
+	Stream(store TCPSocket socket)
 	void write(char dt[])
 	void endStream()
 }
