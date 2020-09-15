@@ -6,7 +6,7 @@
 // 3. allows insertion and removal of components at runtime;
 // 4. supports proxy;
 // 5. supports relocation and replication of specific interfaces;
-// 
+//
 // Author: Roberto Rodrigues Filho
 // February @ 2017
 
@@ -15,7 +15,7 @@ uses Service
 
 data Interface {
 	IntfName name
-	String compVariants[] 
+	String compVariants[]
 }
 
 data IntfName {
@@ -43,7 +43,7 @@ data Component {
 }
 
 data Binding {
-	int compPointer // points to the component in the component array in Config 
+	int compPointer // points to the component in the component array in Config
 	char intfAlias[]
 	char intfSemantic[]
 }
@@ -57,7 +57,7 @@ data Config {
 
 const char debugMSG[] = "[@Assembly]"
 
-// TODO: implement mechanisms to handle concurrency and avoid race conditions 
+// TODO: implement mechanisms to handle concurrency and avoid race conditions
 // (it's important now that we're adding and removing components).
 // TODO: if target app is in the CST you'll have to use the absolute path to avoid config replication (implement the code
 // that'll make this warning true. :)
@@ -67,13 +67,13 @@ const char debugMSG[] = "[@Assembly]"
 // TODO: create a way to test the functions of the Assembly module. So we can add it to the CST.
 // How can I make sure this version works??
 // TODO: this version has a toy implementation of the relocation and replication -- make this new feature better!
-// TODO: create a version without the RecursiveLoader -- the assembly should be able 
+// TODO: create a version without the RecursiveLoader -- the assembly should be able
 // to do what the recursive loader does.
-// TODO: setConfig only works if architectural description matches char by char... This is bad... if we decompose 
+// TODO: setConfig only works if architectural description matches char by char... This is bad... if we decompose
 // the architectural description into a tree, it'll make the assembly module slower.
-component provides composition.Assembly requires io.Output out, data.IntUtil iu, System system, 
-	composition.Search search, composition.ObjectWriter, data.json.JSONParser parser, Loader loader, 
-	data.StringUtil strUtil, composition.Adapter adapter, NativeLoader nLoader, injector.Injector {
+component provides composition.Assembly requires io.Output out, data.IntUtil iu, System system,
+	composition.Search search, composition.ObjectWriter, data.json.JSONParser parser, Loader loader,
+	data.StringUtil strUtil, composition.Adapter adapter, NativeLoader nLoader, injector.Injector, 	io.File {
 
 	App app = null
 	Config configs[] = null //all possible configurations
@@ -99,10 +99,18 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	}
 
 	String[] Assembly:getAllConfigs() {
+		File f = new File("../metacom/allconfigs.txt", File.CREATE)
 		String allConfigs[]
+		
 		for (int counter = 0; counter < configs.arrayLength; counter++) {
 			allConfigs = new String[](allConfigs, new String(configs[counter].description))
+
 		}
+
+		for (int pointer = 0; pointer < allConfigs.arrayLength; pointer++) {
+			f.write("$(iu.intToString(pointer+1)). $(allConfigs[pointer].description)")
+		}
+		f.close()
 		return allConfigs
 	}
 
@@ -130,7 +138,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 
 				// recursively binding the new component
 				// at this point I'm injecting the new state... I need to alter the injector to be able to
-				// inject the new attribute.. in the end the injector will actually call this function... 
+				// inject the new attribute.. in the end the injector will actually call this function...
 				recursiveBinding(configs[currentConfig].components[pointer], currentConfig)
 
 				// adapting the interface....
@@ -188,13 +196,13 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 			char currentConfigDescription[] = configs[currentConfig].description
 			// step 1) remove configs that has any of the 'to remove components' in them
 			Config newConfigs[]
-			for (int configPointer = 0; configPointer < configs.arrayLength; configPointer++) {	
+			for (int configPointer = 0; configPointer < configs.arrayLength; configPointer++) {
 				bool maintainConfig = true// all configs should be copied, except when one comp of the list of compsToRemove is in config...
 				for (int pointer = 0; pointer < compsToRemove.arrayLength; pointer++) {
 					if (isCompPathInCompList(compsToRemove[pointer].string, configs[configPointer].components)) {
 						maintainConfig = false
 						break
-					}	
+					}
 				}
 				if (maintainConfig) { newConfigs = new Config[](newConfigs, configs[configPointer])	}
 			}
@@ -221,14 +229,14 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 						if (intfs[intfPointer].compVariants[varPointer].string == compsToRemove[pointer].string) {
 							maintainVar = false
 							break
-						}	
+						}
 					}
-					if (maintainVar) { variants = new String[](variants, intfs[intfPointer].compVariants[varPointer]) }	
+					if (maintainVar) { variants = new String[](variants, intfs[intfPointer].compVariants[varPointer]) }
 				}
 				intfs[intfPointer].compVariants = variants
 			}
 			// step 4) update the currentConfig pointer (it might be pointing to the wrong config after removing some)
-			for (int configPointer = 0; configPointer < configs.arrayLength; configPointer++) {		
+			for (int configPointer = 0; configPointer < configs.arrayLength; configPointer++) {
 				if (configs[configPointer].description == currentConfigDescription) {
 					currentConfig = configPointer
 					break
@@ -237,10 +245,10 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 			out.println("$(debugMSG) Component removed successfully!")
 		}
 	}
-	
+
 	void Assembly:addComp(String compPaths[]) {
 		// step 1) remove the components that have already been loaded
-		String newComps[] = filterLoadedComps(compPaths) 
+		String newComps[] = filterLoadedComps(compPaths)
 		if (newComps.arrayLength > 0) {
 			// step 2) load the new comps and add only the valid new comps to global interface and to global components list
 			for (int compPointer = 0; compPointer < newComps.arrayLength; compPointer++) {
@@ -255,7 +263,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 			Component runningComps[] = configs[currentConfig].components
 			configs = null
 			loadConfigs(intfs[0])
-			// step 4) transfering state of previously running config to the new objects of the same config 
+			// step 4) transfering state of previously running config to the new objects of the same config
 			// and update currentConfig to point to the config (after adding the current config my change its position in the array)
 			for (int configPointer = 0; configPointer < configs.arrayLength; configPointer++) {
 				if (configs[configPointer].description == runningConfig) {
@@ -278,7 +286,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 					IntfName providedIntfs[] = compnts[compPointer2].iProvide
 					for (int intfsPointer = 0; intfsPointer < providedIntfs.arrayLength; intfsPointer++) {
 						if (providedIntfs[intfsPointer].alias == providedIntf) {
-							refs = new IDCReference[](refs, 
+							refs = new IDCReference[](refs,
 								new IDCReference(configs[currentConfig].components[compPointer].name,
 								configs[currentConfig].components[compPointer].class))
 						}
@@ -305,7 +313,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 						int commonIntfPointer = getCommonIntf(iRequire, iProvide)
 						if (commonIntfPointer == INT_MAX) {
 							out.println("$(debugMSG) Error: a PROXY that does not have a common provided and required interface!")
-							refs = new IDCReference[](refs, 
+							refs = new IDCReference[](refs,
 								new IDCReference(configs[currentConfig].components[compPointer].name,
 								configs[currentConfig].components[compPointer].class))
 						} else {
@@ -314,7 +322,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 									configs[currentConfig].components[compPointer].class))
 						}
 					} else {
-						refs = new IDCReference[](refs, 
+						refs = new IDCReference[](refs,
 							new IDCReference(configs[currentConfig].components[compPointer].name,
 								configs[currentConfig].components[compPointer].class))
 					}
@@ -327,8 +335,8 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	int getCommonIntf(Binding iRequire[], Binding iProvide[]) {
 		for (int count = 0; count < iRequire.arrayLength; count++) {
 			for (int count2 = 0; count2 < iProvide.arrayLength; count2++) {
-				if ((iRequire[count].intfAlias == iProvide[count2].intfAlias) && 
-					(iRequire[count].intfSemantic == iProvide[count2].intfSemantic)) { 
+				if ((iRequire[count].intfAlias == iProvide[count2].intfAlias) &&
+					(iRequire[count].intfSemantic == iProvide[count2].intfSemantic)) {
 					return iRequire[count].compPointer
 				}
 			}
@@ -361,7 +369,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	void updateGlobalInterfacesWith(Component comp) {
 		for (int intfPointer = 0; intfPointer < intfs.arrayLength; intfPointer++) {
 			for (int providePointer = 0; providePointer < comp.iProvide.arrayLength; providePointer++) {
-				if ((comp.iProvide[providePointer].alias == intfs[intfPointer].name.alias) 
+				if ((comp.iProvide[providePointer].alias == intfs[intfPointer].name.alias)
 					&& (comp.iProvide[providePointer].package == intfs[intfPointer].name.package)) {
 					intfs[intfPointer].compVariants = new String[](intfs[intfPointer].compVariants, new String(new char[](comp.name)))
 					break // I'm assuming a component can't require one interface twice
@@ -384,11 +392,11 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 			if (comp.iProvide[pointer].alias == "App") { return false }
 			if (!intfCheck) {
 				for (int intfPointer = 0; intfPointer < intfs.arrayLength; intfPointer++) {
-					if ((comp.iProvide[pointer].alias == intfs[intfPointer].name.alias) 
+					if ((comp.iProvide[pointer].alias == intfs[intfPointer].name.alias)
 						&& (comp.iProvide[pointer].package == intfs[intfPointer].name.package)) {
 							intfCheck = true
 					}
-				}	
+				}
 			}
 		}
 		return intfCheck
@@ -402,7 +410,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 		for (int compPointer = 0; compPointer < comps.arrayLength; compPointer++) {
 			int compPointer2
 			if ((compPointer2 = isComponentInList(comps[compPointer], configs[currentConfig].components)) != INT_MAX) {
-				if (oldConfig) { commonComps = new Component[](commonComps, configs[currentConfig].components[compPointer2]) } 
+				if (oldConfig) { commonComps = new Component[](commonComps, configs[currentConfig].components[compPointer2]) }
 				else { commonComps = new Component[](commonComps, comps[compPointer]) }
 			}
 		}
@@ -416,15 +424,15 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 				for (int depCommon = 0; depCommon < newCommonComps[commonPointer].iRequire.arrayLength; depCommon++) {
 					Binding newCommonC = newCommonComps[commonPointer].iRequire[depCommon]
 					Binding oldCommonC = oldCommonComps[commonPointer].iRequire[depCommon]
-					if (configs[configPointer].components[newCommonC.compPointer].name != 
+					if (configs[configPointer].components[newCommonC.compPointer].name !=
 						configs[currentConfig].components[oldCommonC.compPointer].name) {
 						if (newCommonC.intfSemantic != null) {
-							adapter.adaptRequiredInterface(newCommonComps[commonPointer].class, 
-								new char[](newCommonC.intfAlias, ":", newCommonC.intfSemantic), 
+							adapter.adaptRequiredInterface(newCommonComps[commonPointer].class,
+								new char[](newCommonC.intfAlias, ":", newCommonC.intfSemantic),
 								configs[configPointer].components[newCommonC.compPointer].class)
 						} else {
-							adapter.adaptRequiredInterface(newCommonComps[commonPointer].class, 
-								newCommonC.intfAlias, 
+							adapter.adaptRequiredInterface(newCommonComps[commonPointer].class,
+								newCommonC.intfAlias,
 								configs[configPointer].components[newCommonC.compPointer].class)
 						}
 					}
@@ -445,7 +453,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 				} else { throw new Exception("Inconsistent state.") }
 				// set common values to null/false on components of old config
 				//TODO: maybe detect that hasProvides Service and call stop here???
-				// before setting class to null?	
+				// before setting class to null?
 				oldCommonComps[commonPointer].class = null
 				oldCommonComps[commonPointer].connected = false
 			} else { throw new Exception("Inconsistent state.") }
@@ -522,7 +530,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 				if (comp2.class == null) { comp2.class = loader.load(comp2.name) }
 				char alias[] = null
 				if (comp.iRequire[compPointer].intfSemantic != null) {
-					alias = new char[](comp.iRequire[compPointer].intfAlias, ":", 
+					alias = new char[](comp.iRequire[compPointer].intfAlias, ":",
 						comp.iRequire[compPointer].intfSemantic)
 				} else { alias = comp.iRequire[compPointer].intfAlias }
 				comp.class.wire(alias, comp2.class, alias)
@@ -555,7 +563,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	// so we have to make sure to go through all of the components and check if they've all been
 	// properly loaded and connected -- this only happens to the "replicated" configs
 	// (i.e. not the first config) because they were copied from the first config at some point
-	// and during that time, it is very likely that the first config were not completely loaded  
+	// and during that time, it is very likely that the first config were not completely loaded
 	void loadUntilDone(int configPointer) {
 		for (int counter = 0; counter < configs[configPointer].components.arrayLength; counter++) {
 			Component comp = configs[configPointer].components[counter]
@@ -566,7 +574,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	}
 
 	void generateDescription(int configPointer) {
-		configs[configPointer].description = new char[]("|", 
+		configs[configPointer].description = new char[]("|",
 			dumpListCompNames(configPointer),
 			"|",
 			dumpListRelations(configPointer),
@@ -596,7 +604,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 
 	// add all components to a config list
 	// change the function signature to name (load the component here as well)
-	// also if it's the first component, requirerCompName will be null 
+	// also if it's the first component, requirerCompName will be null
 	// (if requirerCompName == null && configPointer = 0 && intfAlias == "App"
 	// otherwise throw an exception)
 	void addCompToConfig(char compName[], char requirerCompName[], char intfAlias[], char intfSemantic[], int configPointer, bool loadDep) {
@@ -605,7 +613,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 			insertComponentInConfig(comp, requirerCompName, intfAlias, intfSemantic, configPointer)
 			// loadDep will only be false when inserting a component from replicateConfigWithVariants
 			// that means we're replicating a config and adding a variant to the end of the config
-			// but we're not loading the dependencies in that config, because we're still loading all 
+			// but we're not loading the dependencies in that config, because we're still loading all
 			// components in the previous config.
 			// also, in order to load all components' dependencies before loading the recent added dependency
 			// beware that the search is supposed to be in depth (if you imagine the tree-structure)
@@ -620,24 +628,24 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 					for (int compPointer2 = 0; compPointer2 < configs[configPointer].components.arrayLength; compPointer2++) {
 						if (configs[configPointer].components[compPointer2].name == comp.name) {
 							if (intfSemantic != null) {
-								configs[configPointer].components[compPointer].iRequire = 
-									new Binding[](configs[configPointer].components[compPointer].iRequire, 
+								configs[configPointer].components[compPointer].iRequire =
+									new Binding[](configs[configPointer].components[compPointer].iRequire,
 									new Binding(compPointer2, new char[](intfAlias), new char[](intfSemantic)))
-								configs[configPointer].components[compPointer2].requiresMe = 
-									new Binding[](configs[configPointer].components[compPointer2].requiresMe, 
+								configs[configPointer].components[compPointer2].requiresMe =
+									new Binding[](configs[configPointer].components[compPointer2].requiresMe,
 									new Binding(compPointer, new char[](intfAlias), new char[](intfSemantic)))
-								configs[configPointer].listRelations = new String[](configs[configPointer].listRelations, 
+								configs[configPointer].listRelations = new String[](configs[configPointer].listRelations,
 									new String(new char[]("$(iu.intToString(compPointer))",
 									":$(intfAlias)-$(intfSemantic):",
-									"$(iu.intToString(compPointer2))")))	
+									"$(iu.intToString(compPointer2))")))
 							} else {
-								configs[configPointer].components[compPointer].iRequire = 
-									new Binding[](configs[configPointer].components[compPointer].iRequire, 
+								configs[configPointer].components[compPointer].iRequire =
+									new Binding[](configs[configPointer].components[compPointer].iRequire,
 									new Binding(compPointer2, new char[](intfAlias)))
-								configs[configPointer].components[compPointer2].requiresMe = 
-									new Binding[](configs[configPointer].components[compPointer2].requiresMe, 
+								configs[configPointer].components[compPointer2].requiresMe =
+									new Binding[](configs[configPointer].components[compPointer2].requiresMe,
 									new Binding(compPointer, new char[](intfAlias)))
-								configs[configPointer].listRelations = new String[](configs[configPointer].listRelations, 
+								configs[configPointer].listRelations = new String[](configs[configPointer].listRelations,
 									new String(new char[]("$(iu.intToString(compPointer))",
 									":$(intfAlias):",
 									"$(iu.intToString(compPointer2))")))
@@ -648,9 +656,9 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 			}
 		}
 	}
-	
+
 	// beware that the search is supposed to be in depth (if you imagine the tree-structure) i.e. take one component loads
-	// its first dependency connect to it, take the first dependency's dependecy and connect to the component dependency, 
+	// its first dependency connect to it, take the first dependency's dependecy and connect to the component dependency,
 	// and do that before going back to the component and loading its next dependency
 	void loadingDependencies(Component comp, int configPointer) {
 		// in case the config was replicated we'll need to load components from a certain dependency point
@@ -668,7 +676,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 					replicateConfigWithVariants(compVariants, comp.name, comp.dependencies[depPointer].alias,
 					 comp.dependencies[depPointer].semantic, configPointer)
 				}
-				addCompToConfig(compVariants[0].string, comp.name, comp.dependencies[depPointer].alias, 
+				addCompToConfig(compVariants[0].string, comp.name, comp.dependencies[depPointer].alias,
 					comp.dependencies[depPointer].semantic, configPointer, true)
 			} else { throw new Exception("Components not found for: $(comp.dependencies[depPointer].package)") }
 		}
@@ -694,7 +702,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	Interface loadInterface(IntfName name) {
 		for (int pointer = 0; pointer < intfs.arrayLength; pointer++) {
 			//TODO: add semantic here as well
-			if ((intfs[pointer].name.alias == name.alias) && 
+			if ((intfs[pointer].name.alias == name.alias) &&
 				(intfs[pointer].name.package == name.package) &&
 				(intfs[pointer].name.semantic == name.semantic)) {
 				return intfs[pointer]
@@ -705,9 +713,9 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 		intf.name = new IntfName()
 		intf.name.alias = new char[](name.alias)
 		intf.name.package = new char[](name.package)
-		if (name.semantic != null) { 
+		if (name.semantic != null) {
 			intf.name.semantic = new char[](name.semantic)
-			intf.compVariants = clone search.getComponents(new char[](intf.name.package, 
+			intf.compVariants = clone search.getComponents(new char[](intf.name.package,
 				":", intf.name.semantic))
 		} else { intf.compVariants = clone search.getComponents(intf.name.package) }
 		intfs = new Interface[](intfs, intf)
@@ -745,12 +753,12 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 					if (semanticEl != null) { semantic = semanticEl.value }
 					if (!isAutoBindings(package)) {
 						comp.dependencies = new IntfName[](comp.dependencies, new IntfName(package, alias, semantic))
-					}	
+					}
 				}
 			}
 		}
 		// the providedInterfaces are only necessary when adding new components to the list of configs
-		// it's not necessary when loading the initial set of components 
+		// it's not necessary when loading the initial set of components
 		JSONElement providedInterfaces = parser.getValue(document, "providedInterfaces")
 		if (providedInterfaces != null) {
 			for (int i = 0; i < providedInterfaces.children.arrayLength; i++) {
@@ -771,7 +779,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 		return comp
 	}
 
-	// the autoBindings give us a list of interfaces that do not need components to be loaded 
+	// the autoBindings give us a list of interfaces that do not need components to be loaded
 	// -- the Dana VM does that for us
 	bool isAutoBindings(char interfacePckg[]) {
 		String autoBindings[] = system.getAutoBindings()
@@ -783,8 +791,8 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 		return false
 	}
 
-	// when inserting component in config, create a new Component object and copy the info from comp to the 
-	// component that will be inserted into the config. also, remember that we need to insert the component 
+	// when inserting component in config, create a new Component object and copy the info from comp to the
+	// component that will be inserted into the config. also, remember that we need to insert the component
 	// name and how it relates to other components in the string
 	void insertComponentInConfig(store Component comp, char requirerCompName[], char intfAlias[], char intfSemantic[], int configPointer) {
 		// inserting object
@@ -797,7 +805,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 		}
 		// copying dependencies -- not sure if this needs to be copied like this for performance reasons!
 		for (int depPointer = 0; depPointer < comp.dependencies.arrayLength; depPointer++) {
-			c.dependencies = new IntfName[](c.dependencies, 
+			c.dependencies = new IntfName[](c.dependencies,
 				new IntfName(comp.dependencies[depPointer].package,
 					comp.dependencies[depPointer].alias,
 					comp.dependencies[depPointer].semantic))
@@ -808,17 +816,17 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 				if (configs[configPointer].components[counter].name == requirerCompName) {
 					// making the binding between iRequire = requiresMe component
 					if (intfSemantic != null) {
-						configs[configPointer].components[counter].iRequire = 
+						configs[configPointer].components[counter].iRequire =
 							new Binding[](configs[configPointer].components[counter].iRequire,
-							new Binding(configs[configPointer].components.arrayLength, 
+							new Binding(configs[configPointer].components.arrayLength,
 								new char[](intfAlias), new char[](intfSemantic)))
-						c.requiresMe = new Binding[](c.requiresMe, 
-							new Binding(counter, new char[](intfAlias), 
+						c.requiresMe = new Binding[](c.requiresMe,
+							new Binding(counter, new char[](intfAlias),
 								new char[](intfSemantic)))
 					} else {
-						configs[configPointer].components[counter].iRequire = 
+						configs[configPointer].components[counter].iRequire =
 							new Binding[](configs[configPointer].components[counter].iRequire,
-							new Binding(configs[configPointer].components.arrayLength, 
+							new Binding(configs[configPointer].components.arrayLength,
 								new char[](intfAlias), null))
 						c.requiresMe = new Binding[](c.requiresMe,
 							new Binding(counter,
@@ -839,7 +847,7 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 						":$(intfAlias):",
 						"$(iu.intToString(configs[configPointer].components.arrayLength))")
 				}
-				configs[configPointer].listRelations = new String[](configs[configPointer].listRelations, new String(relation))	
+				configs[configPointer].listRelations = new String[](configs[configPointer].listRelations, new String(relation))
 			} else { throw new Exception("Inconsistent state.") }
 		} else if (intfAlias != "App") { throw new Exception("Component not required by anyone.") }
 		// inserting created c object to configs components
@@ -848,9 +856,9 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 		if (comp.classB) {
 			configs[configPointer].listCompNames = new String[](configs[configPointer].listCompNames, new String(new char[](comp.name, "[classB]")))
 		} else {
-			configs[configPointer].listCompNames = new String[](configs[configPointer].listCompNames, new String(comp.name))	
+			configs[configPointer].listCompNames = new String[](configs[configPointer].listCompNames, new String(comp.name))
 		}
-		
+
 	}
 
 	bool isComponentInConfig(Component comp, int configPointer) {
@@ -863,18 +871,18 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	}
 
 	// copy the config from configPointer and add each comp (starting from second position -- 1, not 0)
-	// to the new config -- position 0 goes into the original config, not in the replicas we're creating here 
+	// to the new config -- position 0 goes into the original config, not in the replicas we're creating here
 	// (Future Roberto: but why? what does this comment even mean?)
 	void replicateConfigWithVariants(String compVariants[], char requirerCompName[], char intfAlias[], char intfSemantic[], int configPointer) {
 		for (int variant = 1; variant < compVariants.arrayLength; variant++) {
 			Config newConfig = new Config()
 			newConfig.description = new char[](configs[configPointer].description)
 			for (int counter = 0; counter < configs[configPointer].listCompNames.arrayLength; counter++) {
-				newConfig.listCompNames = new String[](newConfig.listCompNames, 
+				newConfig.listCompNames = new String[](newConfig.listCompNames,
 					new String(new char[](configs[configPointer].listCompNames[counter].string)))
 			}
 			for (int counter = 0; counter < configs[configPointer].listRelations.arrayLength; counter++) {
-				newConfig.listRelations = new String[](newConfig.listRelations, 
+				newConfig.listRelations = new String[](newConfig.listRelations,
 					new String(new char[](configs[configPointer].listRelations[counter].string)))
 			}
 			for (int counter = 0; counter < configs[configPointer].components.arrayLength; counter++) {
@@ -882,19 +890,19 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 				newC.name = new char[](configs[configPointer].components[counter].name)
 				newC.proxy = configs[configPointer].components[counter].proxy
 				for (int natPointer = 0;
-					natPointer < configs[configPointer].components[counter].natIntfs.arrayLength; 
+					natPointer < configs[configPointer].components[counter].natIntfs.arrayLength;
 					natPointer++) {
-					newC.natIntfs = new NativeIntfs[](newC.natIntfs, 
+					newC.natIntfs = new NativeIntfs[](newC.natIntfs,
 						configs[configPointer].components[counter].natIntfs[natPointer])
 				}
 				for (int counter2 = 0; counter2 < configs[configPointer].components[counter].dependencies.arrayLength; counter2++) {
 					if (configs[configPointer].components[counter].dependencies[counter2].semantic != null) {
-						newC.dependencies = new IntfName[](newC.dependencies, 
+						newC.dependencies = new IntfName[](newC.dependencies,
 							new IntfName(new char[](configs[configPointer].components[counter].dependencies[counter2].package),
 								new char[](configs[configPointer].components[counter].dependencies[counter2].alias),
 								new char[](configs[configPointer].components[counter].dependencies[counter2].semantic)))
 					} else {
-						newC.dependencies = new IntfName[](newC.dependencies, 
+						newC.dependencies = new IntfName[](newC.dependencies,
 							new IntfName(new char[](configs[configPointer].components[counter].dependencies[counter2].package),
 								new char[](configs[configPointer].components[counter].dependencies[counter2].alias), null))
 					}

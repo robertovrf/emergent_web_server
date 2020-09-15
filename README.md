@@ -1,16 +1,15 @@
 # emergent_web_server
 
 Some notes to help you get started:
-We now have a make.dn tool to help us compile and filter undesirable components. 
+We now have a make.dn tool to help us compile and filter undesirable components.
 
 So the first thing we need to do once the repo is cloned and the latest version of Dana is downloaded and properly installed is to compile the make.dn. To compile make.dn type: "dnc make.dn -v"
 
-
 You will also find a folder named "seams_compositions". In this folder you will find two subfolders named "common_node" and "entry_point". These folders hold the configuration files that will guide make.dn to properly compile the project and to filter the unwanted components. This is so that we don't have to duplicate the project into common_node and entry_point (like the previous version of the project was set).
 
-To compile for the entry_point node, please type: "dana make seams_compositions/entry_point_node/four_main_compositions/four_compositions.config" 
+To compile for the entry_point node, please type: "dana make seams_compositions/entry_point_node/four_main_compositions/four_compositions.config"
 
-or if you want to compile for the common_node, please type: "dana make seams_compositions/common_node/four_main_compositions/four_compositions.config"
+or if you want to compile for the common_node, please type: "dana make -l seams_compositions/common_node/four_main_compositions/four_compositions.config"
 
 Ilias, if you are running the system locally, please compile it as a common_node.
 
@@ -32,3 +31,20 @@ dana -sp ../repository/ Manager.o
 and
 
 dana -sp ../repository/ ESLauncher.o
+
+
+Important commands:
+
+dnc make.dn -v
+
+dana make -l seams_compositions/common_node/four_main_compositions/four_compositions.config (for linux)
+
+dana make -w seams_compositions/common_node/four_main_compositions/four_compositions.config (for windows)
+
+metacom folder  
+
+dana -sp ../repository/ InteractiveDistributor ../repository/TCPNetwork.o seams_population/1_server.config (for interactive using)
+
+dana -sp ../repository EmergentSys.o
+
+ss -ltn

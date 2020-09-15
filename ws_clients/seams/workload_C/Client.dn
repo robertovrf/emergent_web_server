@@ -60,7 +60,7 @@ component provides App requires io.Output out, data.IntUtil iu, time.Timer t,
 			out.println("requisicao script")
 			http.get(new char[](SERVER_ADDRESS, APP, SCRIPT), null)
 			out.println("completada script")
-		} else if (((NUM_IMAGES+NUM_SCRIPTS) <= requestID) && 
+		} else if (((NUM_IMAGES+NUM_SCRIPTS) <= requestID) &&
 			(requestID < (NUM_IMAGES+NUM_SCRIPTS+NUM_HTML))) {
 			out.println("requisicao html")
 			http.get(new char[](SERVER_ADDRESS, APP, HTML), null)
@@ -84,5 +84,3 @@ component provides App requires io.Output out, data.IntUtil iu, time.Timer t,
 		return 0
 	}
 }
-
-

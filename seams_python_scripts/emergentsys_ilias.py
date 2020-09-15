@@ -102,5 +102,3 @@ if get_metric_data:
     for c in connectors:
         print(c)
     print("***********************************************************")
-
-

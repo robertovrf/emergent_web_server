@@ -1,15 +1,15 @@
 // LearningUCB
 //
 // This component implements the Learning module with the UCB algorithm.
-// 
+//
 // Author: Roberto Rodrigues Filho
 // March @ 2017
 
 const char debugMSG[]		= "[@LearningUCB]"
 /* learning parameters values */
 const int COLLECTION_TIME 	= 5000
-const dec LOWEST_COST 		= 100.0 
-const dec HIGHEST_COST		= 200.0  
+const dec LOWEST_COST 		= 100.0
+const dec HIGHEST_COST		= 200.0
 /* system info */
 //const char IP[]  			= "scc-mc1.lancs.ac.uk" // EmergentSys
 const char IP[]  			= "localhost" // EmergentSys
@@ -19,7 +19,7 @@ data UCB {
 	char action[] //config desc
 	dec qValue
 	dec sumValue
-	dec trials	
+	dec trials
 }
 
 data Metric {
@@ -49,7 +49,7 @@ data PData {
 }
 
 component provides learning.Learning requires io.Output out, io.Input in, data.IntUtil iu, data.DecUtil du,
-	time.Timer t, rest.RESys, util.Math math, data.json.JSONEncoder encoder, io.TextFile, data.StringUtil strUtil {
+	time.Timer t, rest.RESys, util.Math math, data.json.JSONEncoder encoder, io.TextFile, data.StringUtil strUtil, io.File {
 
 	String configList[] 	= null // this won't change
 	String proxyList[] 		= null // this won't change
@@ -88,7 +88,7 @@ component provides learning.Learning requires io.Output out, io.Input in, data.I
 		out.println(toBePrinted)
 		log.writeLine(toBePrinted)
 	}
-  
+
 	/*
 	  def select_arm(self):
 	    n_arms = len(self.counts)
@@ -127,7 +127,7 @@ component provides learning.Learning requires io.Output out, io.Input in, data.I
 				out.println("$(debugMSG) Config: $(iu.intToString(i)) - qValue: $(du.decToString(table[i].qValue))")
 				out.println("$(debugMSG) Config: $(iu.intToString(i)) - trials: $(du.decToString(table[i].trials))")
 				out.println("$(debugMSG) Config: $(iu.intToString(i)) - currentUCB: $(du.decToString(currentUCB))")
-				out.println("$(debugMSG) Config: $(iu.intToString(i)) - maxUCB: $(du.decToString(maxUCB))")	
+				out.println("$(debugMSG) Config: $(iu.intToString(i)) - maxUCB: $(du.decToString(maxUCB))")
 			}
 		}
 		return selectedAction
@@ -218,7 +218,7 @@ component provides learning.Learning requires io.Output out, io.Input in, data.I
 				result = new String[](result, configs[i])
 			}
 		}
-		return result	
+		return result
 	}
 
 	void Learning:learns() {
@@ -228,7 +228,7 @@ component provides learning.Learning requires io.Output out, io.Input in, data.I
 		out.println("$(debugMSG) Repository built!")
 		out.println("$(debugMSG) Got all configs!")
 
-		String ips[] = new String[](new String("scc-mc1.lancs.ac.uk"), 
+		String ips[] = new String[](new String("scc-mc1.lancs.ac.uk"),
 			new String("scc-mc2.lancs.ac.uk:2013"), new String("scc-mc3.lancs.ac.uk"),
 			new String("scc-mc4.lancs.ac.uk:2013"), new String("scc-mc5.lancs.ac.uk:2013"),
 			new String("scc-mc6.lancs.ac.uk:2013"), new String("scc-mc7.lancs.ac.uk:2013"),
@@ -236,6 +236,14 @@ component provides learning.Learning requires io.Output out, io.Input in, data.I
 
 		sys.setIpList(ips)
 		configList = sys.getAllConfigs()
+
+		File f = new File("configs2.txt", File.CREATE)
+
+		//out.println("Tamanho do arquivo de config: $allConfigList.arrayLength")
+
+		for (int pointer = 0; pointer < configList.arrayLength; pointer++) {
+			f.write("$(iu.intToString(pointer+1)). $(configList[pointer].string)")
+		}
 
 		loadTable()
 		out.println("$(debugMSG) Table loaded!")
@@ -255,7 +263,7 @@ component provides learning.Learning requires io.Output out, io.Input in, data.I
 		out.println("$(debugMSG) starting learning...")
 		log = new TextFile("ucb_results.data", File.FILE_ACCESS_WRITE)
 		Thread learningThread = asynch::start()
-	
+
 		out.println("$(debugMSG) Press ENTER to finish...")
 		in.readln()
 

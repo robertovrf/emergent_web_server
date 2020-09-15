@@ -8,7 +8,7 @@ component provides App requires io.Output out, net.http.HTTPRequest http, data.I
 	void makeRequest(char resource[], int id) {
 		DateTime start = calendar.getTime()
 		DateTime firstByte = new DateTime()
-		HTTPResponse resp = http.get(new char[]("http://", server, ":2012/danapedia/action_page.dn?page=view&id=1"), null)
+		HTTPResponse resp = http.get(new char[]("http://", server, ":2011/danapedia/action_page.dn?page=view&id=1"), null)
 		DateTime end = calendar.getTime()
 		DateTime diff = dateUtil.diff(start, end)
 		out.println("[$(iu.intToString(id))]: $(iu.intToString(dateUtil.toMilliseconds(diff)))")

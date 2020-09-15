@@ -47,5 +47,3 @@ pp.pprint(selected_config)
 
 requests.post("http://localhost:2011/meta/set_config", json={"config":selected_config})
 print("New configuration applied successfully!")
-
-

@@ -19,7 +19,7 @@ component provides App requires io.Output out, data.IntUtil iu, util.ConfigFile,
 		if (params.arrayLength != 2) {
 			out.println("$(debugMSG) ERROR: Run 'dana make.o -l configfile.config'")
 			return 1
-		}
+	  }
 		out.println("$(debugMSG) Repository compilation process started.")
 		RunStatus rS = run.execute("dnc metacom/. -sp \"repository;metacom\" -v")
 		if (rS.executed) {
