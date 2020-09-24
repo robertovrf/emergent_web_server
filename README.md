@@ -47,4 +47,9 @@ dana -sp ../repository/ InteractiveDistributor ../repository/TCPNetwork.o seams_
 
 dana -sp ../repository EmergentSys.o
 
+dana -sp ../repository/ Manager.o
+
+dana -sp ../repository/ ESLauncher.o
+
+
 ss -ltn

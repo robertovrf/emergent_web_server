@@ -34,7 +34,7 @@ component provides rest.RESys requires io.Output out, data.IntUtil iu, net.TCPSo
 	}
 
 	/* Assembly functions */
-	// update this to return bool?	
+	// update this to return bool?
 	void RESys:setMain(char path[]) {
 		char payload[] = new char[]("{\"comp\":\"", path, "\"}")
 		HTTPMessage msg = makeRequest("POST", SET_MAIN, payload)
@@ -70,7 +70,7 @@ component provides rest.RESys requires io.Output out, data.IntUtil iu, net.TCPSo
 		HTTPMessage msg = makeRequest("POST", ADD_COMP, payload)
 		if (msg.status != 200) { out.println("$(debugMSG) Something went wrong!") }
 	}
-	
+
 	/* Perception functions */
 	void RESys:addProxy(char exp[]) {
 		char payload[] = new char[]("{\"exp\": \"", exp, "\"}")
@@ -84,7 +84,7 @@ component provides rest.RESys requires io.Output out, data.IntUtil iu, net.TCPSo
 		if (msg.status != 200) { out.println("$(debugMSG) Something went wrong!") }
 	}
 
-	// returns json -- the parser will be done later 
+	// returns json -- the parser will be done later
 	char[] RESys:getPerceptionData() {
 		HTTPMessage msg = makeRequest("GET", GET_PERCEPTION, "")
 		if (msg.status == 200) { return msg.postData }
@@ -122,8 +122,8 @@ component provides rest.RESys requires io.Output out, data.IntUtil iu, net.TCPSo
 
 	HTTPMessage request(char req[]) {
 		TCPSocket s = new TCPSocket()
-		s.connect(SYSTEM_IP, SYSTEM_PORT)
-		s.send(req)		
+		if(s.connect(SYSTEM_IP, SYSTEM_PORT) == false) out.println("Teste")
+		s.send(req)
 		HTTPMessage msg = httpUtil.readHTTPRequest(s)
 		s.disconnect()
 		return msg//.postData

@@ -1,26 +1,37 @@
 uses time.DateTime
 
 const char IP = "localhost"
-const char PORT = "2011"
+const int PORT = 2011
 
 data Ind {
   int gene[]
   dec fitness
 }
 
+data Config{
+  char description[]
+  String compNames[] // list of components name
+  String relations[] // how components connect to each other
+}
+
+data Map{
+  String compNames[]
+}
+
 const char debugMSG[] = "[@GeneticAlg]"
 
-component provides App requires io.Output out,io.Input in, util.RandomInt rand,data.adt.List list, data.IntUtil iu,
-                                data.DecUtil du, time.Calendar time, io.File, time.DateUtil dtu, rest.RESys{
-  int geneLenght = 4
+component provides App requires io.Output out,io.Input in, util.RandomInt rand, data.IntUtil iu,
+                                data.DecUtil du, time.Calendar time, io.File, time.DateUtil dtu, rest.RESys, data.StringUtil strUtil{
+  int geneLenght = 0
   int generation = 0
   int popMax = 0
 
 
-
   int nogoodnameyet[] = new int[](2, 4, 3, 6)
 
-  String allConfigList[] = null
+  Config allConfigs[] = null
+
+  Map availableComponents[] = null
 
   RESys sys = null
 
@@ -53,22 +64,117 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand,d
 		return result
 	}
 
+  void printConfigs(){
+    for(int i = 0; i < allConfigs.arrayLength; i++){
+      out.println("CONFIG $(iu.intToString(i))\n $(allConfigs[i].description)")
+      out.println("################ Components #######################")
+      for(int j = 0; j < allConfigs[i].compNames.arrayLength; j++){
+        out.println("$(iu.intToString(j)): $(allConfigs[i].compNames[j].string)")
+      }
+      out.println("################ Relations #######################")
+      for(int j = 0; j < allConfigs[i].relations.arrayLength; j++){
+        out.println("$(iu.intToString(j)): $(allConfigs[i].relations[j].string)")
+      }
+    }
+  }
+
+  void getConfigs(){
+    File f = new File("../metacom/txt/allconfigs.txt", File.FILE_ACCESS_READ)
+
+    char configs[] = f.read(f.getSize())
+
+    String temp[] = strUtil.explode(configs, " ")
+
+    allConfigs = new Config[temp.arrayLength]
+
+    for(int pointer = 0; pointer < temp.arrayLength; pointer++){
+      allConfigs[pointer] = new Config()
+      allConfigs[pointer].description = new char[](temp[pointer].string)
+      allConfigs[pointer].compNames = new String[](strUtil.explode(strUtil.explode(temp[pointer].string,"|")[0].string,","))
+      allConfigs[pointer].relations = new String[](strUtil.explode(strUtil.explode(temp[pointer].string,"|")[1].string,","))
+    }
+  }
+
+  void printAvailableComps(){
+    for(int i = 0; i < availableComponents.arrayLength;i++){
+      out.println("Components $(iu.intToString(i))")
+      for(int j = 0; j < availableComponents[i].compNames.arrayLength; j++){
+        out.println("$(iu.intToString(j)): $(availableComponents[i].compNames[j].string)")
+      }
+    }
+  }
+
+  void getAvailableComps(){
+    File f = new File("../metacom/txt/compList.txt", File.FILE_ACCESS_READ)
+
+      char allComps[] = f.read(f.getSize())
+
+      String temp[] = strUtil.explode(allComps, " ")
+      //out.println("Debug Comps parts $(iu.intToString(temp.arrayLength))")
+      availableComponents = new Map[temp.arrayLength]
+
+      for(int pointer = 0; pointer < temp.arrayLength; pointer++){
+        availableComponents[pointer] = new Map()
+        availableComponents[pointer].compNames = new String[](strUtil.explode(strUtil.explode(temp[pointer].string,"|")[0].string,","))
+      }
+  }
+
+  int[] interpreterDescriptionToGene(Config config){
+    int gene[] = new int[geneLenght]
+    for(int i = 0; i < geneLenght; i++){
+      gene[i] = 0
+      for(int j = 0; j < availableComponents[i].compNames.arrayLength; j++){
+        for(int k = 0; k < config.compNames.arrayLength;k++){
+          if(config.compNames[k].string == availableComponents[i].compNames[j].string){
+            gene[i] = j + 1
+          }
+        }
+      }
+    }
+
+    return gene
+  }
+
+  char[] interpreterGeneToDescription(int gene[]){
+    bool hasFound = false
+    int count = 0
+    int i
+    for(i = 0; i < allConfigs.arrayLength; i++){
+      int j = 0
+      while(j < allConfigs[i].compNames.arrayLength){
+        if(count == geneLenght){
+          hasFound = true
+          break
+        }
+        if((gene[count]) == 0 ) {
+          count++
+        } else {
+          if(availableComponents[count].compNames[(gene[count]-1)].string == allConfigs[i].compNames[j].string){
+            count++
+            j = 0
+          } else {
+            j++
+          }
+        }
+      }
+
+      if(hasFound == true) break
+      else count = 0
+    }
+    return allConfigs[i].description
+  }
+
   void randomizer(){
     DateTime dt = time.getTime()
     rand.setSeed(dt.millisecond * dt.millisecond)
   }
 
-/*
   void fitnessFunction(Ind ind){
     //setconfig
     //get responseTime
     //
   }
 
-  char[] interpreter(){
-    //
-  }
-*/
   void mutation(Ind ind){
     int randomPos = rand.get(geneLenght)
     int newGene
@@ -227,9 +333,25 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand,d
     bool hasFound = false
     int maxGeneration = 0
 
+    getConfigs()
+    //printConfigs()
+
+    getAvailableComps()
+    //printAvailableComps()
+
     sys = new RESys(IP, PORT)
 
-    char config[] = sys.getConfig()
+    sys.setMain("../repository/TCPNetwork.o")
+
+    sys.addProxy("|../metacom/monitoring/proxies/HTTPProxy.o|*(*:HTTPGET[0]:*)|")
+
+    String temp[] = sys.getAllConfigs()
+
+    out.println("$(temp[0].string)")
+
+    //geneLenght = availableComponents.arrayLength
+
+    randomizer()
 
 /*
     out.println("Population max length: ")
@@ -243,8 +365,8 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand,d
     population = createFirstPopulation(population)
 */
     //parents = parentSelection(population)
-    randomizer()
 
+/*
     parents = new Ind[2]
     Ind ind1 = new Ind()
     Ind ind2 = new Ind()
@@ -262,7 +384,7 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand,d
       }
       out.println("")
     }
-
+*/
 
     //j = 0
     //for(i = (popMax - (children.arrayLength)); i < popMax ; i++){

@@ -49,7 +49,7 @@ data PData {
 }
 
 component provides learning.Learning requires io.Output out, io.Input in, data.IntUtil iu, data.DecUtil du,
-	time.Timer t, rest.RESys, util.Math math, data.json.JSONEncoder encoder, io.TextFile, data.StringUtil strUtil, io.File {
+	time.Timer t, rest.RESys, util.Math math, data.json.JSONEncoder encoder, io.TextFile, data.StringUtil strUtil{
 
 	String configList[] 	= null // this won't change
 	String proxyList[] 		= null // this won't change
@@ -236,14 +236,6 @@ component provides learning.Learning requires io.Output out, io.Input in, data.I
 
 		sys.setIpList(ips)
 		configList = sys.getAllConfigs()
-
-		File f = new File("configs2.txt", File.CREATE)
-
-		//out.println("Tamanho do arquivo de config: $allConfigList.arrayLength")
-
-		for (int pointer = 0; pointer < configList.arrayLength; pointer++) {
-			f.write("$(iu.intToString(pointer+1)). $(configList[pointer].string)")
-		}
 
 		loadTable()
 		out.println("$(debugMSG) Table loaded!")

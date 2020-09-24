@@ -73,7 +73,7 @@ const char debugMSG[] = "[@Assembly]"
 // the architectural description into a tree, it'll make the assembly module slower.
 component provides composition.Assembly requires io.Output out, data.IntUtil iu, System system,
 	composition.Search search, composition.ObjectWriter, data.json.JSONParser parser, Loader loader,
-	data.StringUtil strUtil, composition.Adapter adapter, NativeLoader nLoader, injector.Injector, 	io.File {
+	data.StringUtil strUtil, composition.Adapter adapter, NativeLoader nLoader, injector.Injector{
 
 	App app = null
 	Config configs[] = null //all possible configurations
@@ -99,18 +99,12 @@ component provides composition.Assembly requires io.Output out, data.IntUtil iu,
 	}
 
 	String[] Assembly:getAllConfigs() {
-		File f = new File("../metacom/allconfigs.txt", File.CREATE)
 		String allConfigs[]
-		
+
 		for (int counter = 0; counter < configs.arrayLength; counter++) {
 			allConfigs = new String[](allConfigs, new String(configs[counter].description))
 
 		}
-
-		for (int pointer = 0; pointer < allConfigs.arrayLength; pointer++) {
-			f.write("$(iu.intToString(pointer+1)). $(allConfigs[pointer].description)")
-		}
-		f.close()
 		return allConfigs
 	}
 
