@@ -17,7 +17,7 @@ const char debugMSG[] = "[@Client]"
 	17% html (dynamic)
 */
 const int NUM_REQUESTS = 10 // simultaneous requests
-const char SERVER_ADDRESS[] = "http://scc-mc1.lancs.ac.uk:2012/"
+const char SERVER_ADDRESS[] = "http://localhost:2012/"
 const char APP[] = "danapedia/"
 const char SCRIPT[] = "css/reset.css"
 const char HTML[] = "action_page.dn?page=view&id=1"

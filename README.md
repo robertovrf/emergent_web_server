@@ -41,7 +41,8 @@ dana make -l seams_compositions/common_node/four_main_compositions/four_composit
 
 dana make -w seams_compositions/common_node/four_main_compositions/four_compositions.config (for windows)
 
-metacom folder  
+
+metacom folder
 
 dana -sp ../repository/ InteractiveDistributor ../repository/TCPNetwork.o seams_population/1_server.config (for interactive using)
 
@@ -51,5 +52,6 @@ dana -sp ../repository/ Manager.o
 
 dana -sp ../repository/ ESLauncher.o
 
+dana -sp ../repository GeneticAlg.o
 
 ss -ltn

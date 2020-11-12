@@ -2,7 +2,7 @@ const char debugMSG[] = "[@DZIP]"
 
 component provides compression.Compression requires io.Output out, data.IntUtil iu,
 	io.File, compress.Compressor:gzip compressor {
-	
+
 	char[] Compression:compressResource(char resource[]) {
 		char newName[] = "$(resource).gz"
 		File output = new File(newName, File.WRITE)

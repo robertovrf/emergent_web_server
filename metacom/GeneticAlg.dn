@@ -1,9 +1,11 @@
 uses time.DateTime
 
-const char IP = "localhost"
+const char IP[] = "localhost"
 const int PORT = 2011
+const int observationWindow = 1000
 
 data Ind {
+  char description[]
   int gene[]
   dec fitness
 }
@@ -21,13 +23,12 @@ data Map{
 const char debugMSG[] = "[@GeneticAlg]"
 
 component provides App requires io.Output out,io.Input in, util.RandomInt rand, data.IntUtil iu,
-                                data.DecUtil du, time.Calendar time, io.File, time.DateUtil dtu, rest.RESys, data.StringUtil strUtil{
+data.DecUtil du, time.Calendar time, io.File, time.DateUtil dtu, rest.RESys, data.StringUtil strUtil,
+time.Timer t, data.json.JSONParser parser{
+
   int geneLenght = 0
   int generation = 0
-  int popMax = 0
-
-
-  int nogoodnameyet[] = new int[](2, 4, 3, 6)
+  int popMax
 
   Config allConfigs[] = null
 
@@ -79,11 +80,7 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
   }
 
   void getConfigs(){
-    File f = new File("../metacom/txt/allconfigs.txt", File.FILE_ACCESS_READ)
-
-    char configs[] = f.read(f.getSize())
-
-    String temp[] = strUtil.explode(configs, " ")
+    String temp[] = sys.getAllConfigs()
 
     allConfigs = new Config[temp.arrayLength]
 
@@ -131,25 +128,39 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
         }
       }
     }
-
     return gene
   }
 
   char[] interpreterGeneToDescription(int gene[]){
     bool hasFound = false
+
     int count = 0
-    int i
-    for(i = 0; i < allConfigs.arrayLength; i++){
+    for(int i = 0; i < allConfigs.arrayLength; i++){
       int j = 0
       while(j < allConfigs[i].compNames.arrayLength){
         if(count == geneLenght){
           hasFound = true
           break
         }
-        if((gene[count]) == 0 ) {
-          count++
-        } else {
+        bool flag = false
+        if((gene[count]) != 0 ) {
           if(availableComponents[count].compNames[(gene[count]-1)].string == allConfigs[i].compNames[j].string){
+            count++
+            j = 0
+          } else {
+            j++
+          }
+        }
+        else {
+          for(int m = 0; m < allConfigs[i].compNames.arrayLength; m++){
+            for(int n = 0; n < availableComponents[count].compNames.arrayLength; n++){
+              if(allConfigs[i].compNames[m].string == availableComponents[count].compNames[n].string){
+                flag = true
+              }
+            }
+            if(flag) break
+          }
+          if(flag == false){
             count++
             j = 0
           } else {
@@ -158,10 +169,10 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
         }
       }
 
-      if(hasFound == true) break
+      if(hasFound == true) return allConfigs[i].description
       else count = 0
     }
-    return allConfigs[i].description
+    return null
   }
 
   void randomizer(){
@@ -170,25 +181,30 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
   }
 
   void fitnessFunction(Ind ind){
-    //setconfig
-    //get responseTime
-    //
-  }
+    out.println("$(debugMSG) Starting fitness calculation process")
+    sys.setConfig(ind.description)
+
+    t.sleep(observationWindow)
+
+    JSONElement document = parser.parseDocument(sys.getPerceptionData())
+    JSONElement metricsJSON = parser.getValue(document, "metrics")
+    if (metricsJSON != null) {
+        char name[] = parser.getValue(metricsJSON.children[0], "name").value
+        dec value = du.decFromString(parser.getValue(metricsJSON.children[0], "value").value)
+        int count = iu.intFromString(parser.getValue(metricsJSON.children[0], "count").value)
+        ind.fitness = value/count
+        if(ind.fitness < 0) ind.fitness = 0
+    }
+    out.println("$(debugMSG) Process ended")
+	}
 
   void mutation(Ind ind){
     int randomPos = rand.get(geneLenght)
     int newGene
-    if(randomPos == 2 || randomPos == 3){
-      while(1){
-        newGene = rand.get(nogoodnameyet[randomPos]+1)
-        if(newGene != ind.gene[randomPos]) break
+    while(1){
+      newGene = rand.get((availableComponents[randomPos].arrayLength)+1)
+      if(newGene != ind.gene[randomPos]) break
       }
-    } else {
-      while(1){
-        newGene = rand.get(nogoodnameyet[randomPos])
-        if(newGene != ind.gene[randomPos]) break
-      }
-    }
     out.println("Position = $randomPos Old gene = $(ind.gene[randomPos]) New Gene = $newGene")
     ind.gene[randomPos] = newGene
 
@@ -203,28 +219,42 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
     return false
   }
 
-
   Ind[] createFirstPopulation(Ind population[]){
     bool hasEqual = false
     int popLength = 0
-    Ind aux = new Ind()
-    int cont
+    int random = 0
+
+    int aux[] = new int[allConfigs.arrayLength]
+    for(int i = 0; i < allConfigs.arrayLength; i++){
+        aux[i] = 0
+    }
+
     while(popLength < popMax){
         Ind ind = new Ind()
-        ind.gene = new int[geneLenght]
-        //TODO: create a way to select random configs in configList and
+        //TODO: create a way to select random configs in configList
+        random = rand.get(allConfigs.arrayLength)
+        if(aux[random] == 0){
+          ind.gene = interpreterDescriptionToGene(allConfigs[random])
+          ind.description = allConfigs[random].description
+          fitnessFunction(ind)
+          population[popLength] = ind
+          aux[random] = 1
+          popLength++
+        }
       }
   return population
-  }
+}
 
 //Implementation of a tournament selection method
   Ind[] parentSelection(Ind population[]){
     int quantity
+
     if(popMax <= 20){
-      quantity = 6
+      quantity = 2
     } else{
       quantity = ((popMax*3)/10)
     }
+    //out.println("Parents quantity $(iu.intToString(quantity))")
 
     if(quantity % 2 == 1) quantity++
 
@@ -232,8 +262,8 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
 
     int aux[] = new int[popMax]
 
-    parents[0] = population[0]
-    int cont = 1
+    //parents[0] = population[0]
+    int cont = 0
     aux[0] = 1
 
     //aux vector to control selected parents
@@ -248,14 +278,13 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
         rand1 = rand.get(popMax)
         if(aux[rand1] == 0) break
       }
-
       while(1){
         rand2 = rand.get(popMax)
         if(aux[rand2] == 0 && rand2 != rand1) break
       }
       //tournament selection method
         //out.println("$(du.decToString(population[rand1].fitness))[$rand1] x $(du.decToString(population[rand2].fitness))[$rand2]")
-        if(population[rand1].fitness > population[rand2].fitness){
+        if(population[rand1].fitness < population[rand2].fitness){
           parents[cont] = population[rand1]
           aux[rand1] = 1
           cont++
@@ -308,20 +337,34 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
           children[i].gene[k] = parents[i].gene[k]
           children[i+1].gene[k] = parents[i+1].gene[k]
         }
-
       }
 
       //looking for mutations
       probMutation(children[i])
       probMutation(children[i+1])
 
-      //fitnessFunction(children[i])
-      //fitnessFunction(children[i+1])
+      children[i].description = interpreterGeneToDescription(children[i].gene)
+      children[i+1].description = interpreterGeneToDescription(children[i+1].gene)
+
+      if(children[i].description != null){
+        fitnessFunction(children[i])
+      }
+      if(children[i+1].description != null){
+        fitnessFunction(children[i+1])
+      }
+
     }
 
     return children
   }
 
+  void printInd(Ind ind){
+    out.print("$(debugMSG) Printing ind Gene = ")
+    for(int i = 0; i <ind.gene.arrayLength; i++) {
+      out.print("$(iu.intToString(ind.gene[i])),")
+    }
+    out.println(" Fitness: $(du.decToString(ind.fitness))")
+  }
 
   int App:main(AppParam params[]){
     Ind ind
@@ -333,64 +376,56 @@ component provides App requires io.Output out,io.Input in, util.RandomInt rand, 
     bool hasFound = false
     int maxGeneration = 0
 
+    randomizer()
+
+    sys = new RESys(IP, PORT)
+
+    //sys.setMain("../repository/TCPNetwork.o")
+
+    //sys.addProxy("|../metacom/monitoring/proxies/HTTPProxy.o|*(*:HTTPGET[0]:*)|")
+
     getConfigs()
     //printConfigs()
 
     getAvailableComps()
     //printAvailableComps()
 
-    sys = new RESys(IP, PORT)
+    geneLenght = availableComponents.arrayLength
 
-    sys.setMain("../repository/TCPNetwork.o")
+    //popMax = ((allConfigs.arrayLength)*3/10)
+    popMax = allConfigs.arrayLength
+    if(popMax % 2 == 1) popMax++
 
-    sys.addProxy("|../metacom/monitoring/proxies/HTTPProxy.o|*(*:HTTPGET[0]:*)|")
-
-    String temp[] = sys.getAllConfigs()
-
-    out.println("$(temp[0].string)")
-
-    //geneLenght = availableComponents.arrayLength
-
-    randomizer()
-
-/*
-    out.println("Population max length: ")
-    popMax = iu.intFromString(in.readln())
-
-    out.println("Insert the max of generations: ")
-    maxGeneration = iu.intFromString(in.readln())
+    maxGeneration = 500
 
     population = new Ind[popMax]
 
+    out.println("$(debugMSG) Creating First Population")
+
     population = createFirstPopulation(population)
-*/
-    //parents = parentSelection(population)
 
-/*
-    parents = new Ind[2]
-    Ind ind1 = new Ind()
-    Ind ind2 = new Ind()
-    ind1.gene = new int[](1,2,3,4)
-    ind2.gene = new int[](2,3,2,1)
+    sort(population, true)
 
-    parents[0] = ind1
-    parents[1] = ind2
+    out.println("$(debugMSG) First Population created")
+
+    for(int num = 0; num < popMax; num++) printInd(population[num])
+
+    parents = parentSelection(population)
+
+    out.println("$(debugMSG) Parents selected")
+
+    for(int num = 0; num < parents.arrayLength; num++) printInd(parents[num])
 
     children = crossoverParents(parents)
-    for(i = 0; i < 2;i++){
-      out.print("Child $i - ")
-      for(j = 0; j < geneLenght; j++){
-        out.print("$(iu.intToString(children[i].gene[j])),")
-      }
-      out.println("")
-    }
-*/
 
-    //j = 0
-    //for(i = (popMax - (children.arrayLength)); i < popMax ; i++){
-    //  population[i] = children[j]
-    //  j++
-  //  }
+    out.println("$(debugMSG) Children selected")
+
+    for(int num = 0; num < children.arrayLength; num++) {
+      printInd(children[num])
+      if(children[num].description == null) out.println("Não apto")
+      else out.println("Apto")
+    }
+
 
     return 0
   }
