@@ -4,7 +4,7 @@ EWS is an examplar to explore online learning in compositional self-adaptive sys
 
 ## Quick Start
 
-Here we describe the quickest way to get the examplar running. First, we expect you to have Docker installed and configured in your machine. More information on how to install and configure Docker at https://www.docker.com/get-started. Once Docker is ready to be used, we can execute EWS and access an interactive tool to explore EWS API and the Learning module.
+Here we describe the quickest way to get the examplar running. First, we expect you to have Docker installed and configured in your machine. More information on how to install and configure Docker at https://www.docker.com/get-started. Once Docker is ready to be used, we can execute EWS and access an interactive tool to explore EWS API and the available Learning algorithm.
 
 On your terminal, execute our docker image available on Docker Hub:
 
