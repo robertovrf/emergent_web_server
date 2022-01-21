@@ -24,6 +24,8 @@ After typing this command on your terminal, you should get a terminal inside the
 
 _# dana -sp ../repository InteractiveEmergentSys.o_
 
+**NOTE:** The command above should be typed inside the EWS container. In the _emergent\_web\_server/pal_ folder. 
+
 ### Interactive Emergent System
 
 The interactive tool launches EWS. We ask the user to be patient as this may take a little while to start and configure EWS's 42 unique compositions. Once EWS is executing, you'll get access to a command prompt. To access all available commands to interact with EWS API, type:
