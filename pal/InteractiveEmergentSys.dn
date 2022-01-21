@@ -92,7 +92,11 @@ component provides App requires io.Output out, data.IntUtil iu, rest.RESys, io.I
 			if (cmdList[0].string == SET_CONFIG) {
 				configsStr = sys.getAllConfigs()
 				int indexConfig = iu.intFromString(cmdList[1].string)
-				sys.setConfig(configsStr[indexConfig].string)
+				if (indexConfig >= configsStr.arrayLength) {
+					out.println("$(debugMSG) ERROR! Config does not exist.")
+				} else {
+					sys.setConfig(configsStr[indexConfig].string)
+				}			
 			} else if (cmdList[0].string == ADD_COMP) {
 				out.println("$(debugMSG) This may take a while. Please wait...")
 				sys.addComp(new String[](new String(strUtil.subString(cmd, (ADD_COMP.arrayLength+1),(cmd.arrayLength-ADD_COMP.arrayLength-1)))))
