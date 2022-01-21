@@ -208,11 +208,11 @@ component provides learning.Learning requires io.Output out, data.IntUtil iu, ti
 		int count = 0
 		PerceptionData pD[] = encoder.jsonToArray(perceptionData, typeof(PerceptionData[]), null)
 		if (((pD != null) && (pD.arrayLength > 0)) && (pD[0].metrics.arrayLength > 0)) {
-			result = new char[]("[ ", getInfoArchitecture(pD[0].config), " ]: ")
+			result = new char[]("[ ", getInfoArchitecture(pD[0].config), " ] - ")
 			value = pD[0].metrics[0].value
 			count = pD[0].metrics[0].counter
 			dec metricValue = value/count
-			result = new char[](result, du.decToString(metricValue))
+			result = new char[](result, "response time: ", du.decToString(metricValue), " ms")
 		} else {
 			out.println("$(debugMSG) ERROR: No perception data.")
 			return null

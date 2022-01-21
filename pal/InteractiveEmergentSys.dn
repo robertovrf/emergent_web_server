@@ -124,7 +124,7 @@ component provides App requires io.Output out, data.IntUtil iu, rest.RESys, io.I
 		sys = new RESys(IP, PORT)
 		String configs[] = sys.getAllConfigs()
 		if (configs == null) {
-			out.println("$(debugMSG) Starting up the EWS. Please wait. This may take a while.")
+			out.println("$(debugMSG) Starting up EWS. Please wait. This may take a while.")
 			sys.setMain("../repository/TCPNetwork.o", null)
 			out.println("$(debugMSG) System running.")
 			out.println("$(debugMSG) Adding proxy. Please wait. This may take a while.")
