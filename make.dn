@@ -1,7 +1,16 @@
-// make
-// This program compiles the distributed web platform as according to configuration files.
+// make.dn
+// This program compiles the web platform according to user's choice.
 // Author: Roberto Rodrigues Filho
-// July @ 2019
+// Created: July @ 2019
+// Updated: Jan @ 2022
+
+
+const char ALL_CONFIGS[]				= "all"
+const char ONLY_CACHE[]					= "cache"
+const char ONLY_COMPRESSION[]			= "compression"
+const char ONLY_CACHE_COMPRESSION[]		= "cache_compression"
+const char ONLY_DEFAULT[]				= "default"
+
 const char debugMSG[] = "[@make]"
 
 component provides App requires io.Output out, data.IntUtil iu, util.ConfigFile, os.Run run, data.StringUtil strUtil {
@@ -15,19 +24,74 @@ component provides App requires io.Output out, data.IntUtil iu, util.ConfigFile,
 		return newPath
 	}
 
+	char[] configToFileMap(char config[]) {
+		if (config == ALL_CONFIGS) { return "make_scripts/all_configs/all_configs.config" }
+		if (config == ONLY_CACHE) { return "make_scripts/cache/cache.config" }
+		if (config == ONLY_COMPRESSION) { return "make_scripts/compression/compression.config" }
+		if (config == ONLY_CACHE_COMPRESSION) { return "make_scripts/cache_compression/cache_compression.config" }
+		if (config == ONLY_DEFAULT) { return "make_scripts/default/default.config" }
+		return null
+	}
+
+	bool checkParams(AppParam params[]) {
+		if ((checkUserChoice(params[1].string)) 
+			&& (checkOSChoice(params[0].string))) { return true }
+		return false
+	}
+
+	bool checkOSChoice(char choice[]) {
+		if ((choice == "-l") || (choice == "-w")) {
+			return true
+		}
+		return false
+	}
+
+	bool checkUserChoice(char choice[]) {
+		if (choice == ALL_CONFIGS) { return true }
+		if (choice == ONLY_CACHE) { return true }
+		if (choice == ONLY_COMPRESSION) { return true }
+		if (choice == ONLY_CACHE_COMPRESSION) { return true }
+		if (choice == ONLY_DEFAULT) { return true }
+		return false
+	}
+
+	void help() {
+		out.println("[ERROR] Invalid parameters.")
+		out.println("\n$(debugMSG) EWS Building Tool")
+		out.println("\nUsage: dana make.o [OS options] [composition]")
+		out.println("\nOS Options: ")
+		out.println("    -l                 For Linux and MacOS systems.")
+		out.println("    -w                 For Windows systems.")
+		out.println("\nCompositions: ")
+		out.println("    all                To compile all compositions.")
+		out.println("    cache              Only cache compositions.")
+		out.println("    compression        Only compression compositions.")
+		out.println("    cache_compression  Only compression compositions.")
+		out.println("    default            Only one default composition.")
+		out.println("\n\nExample: dana make.o -l all_configs")
+	}
+
+	void compileClients() {
+		RunStatus rS = run.execute("dnc ws_clients/. -v")
+		if (rS.executed) {
+
+		}
+	}
+
 	int App:main(AppParam params[]) {
-		if (params.arrayLength != 2) {
-			out.println("$(debugMSG) ERROR: Run 'dana make.o -l configfile.config'")
+		if ((params.arrayLength != 2) || (!checkParams(params))) {
+			help()
 			return 1
 		}
 		out.println("$(debugMSG) Repository compilation process started.")
-		RunStatus rS = run.execute("dnc metacom/. -sp \"repository;metacom\" -v")
+		compileClients()
+		RunStatus rS = run.execute("dnc pal/. -sp \"repository;pal\" -v")
 		if (rS.executed) {
-			rS = run.execute("dnc repository/. -sp \"repository;metacom\" -v")
+			rS = run.execute("dnc repository/. -sp \"repository;pal\" -v")
 			if (rS.executed) {
 				out.println("$(debugMSG) Repository compilation process finished.")
 				out.println("$(debugMSG) Filtering components according to config file...")
-				ConfigFile cFile = new ConfigFile(params[1].string)
+				ConfigFile cFile = new ConfigFile(configToFileMap(params[1].string))
 				char compListStr[] = cFile.getValue("components")
 				String comps[] = strUtil.explode(compListStr, ",")
 				char comp[] = null

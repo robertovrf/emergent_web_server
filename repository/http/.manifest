@@ -1,5 +1,0 @@
-{
-defaultLinks:	[
-				{interface: "HTTPHeader", component: "HTTPHeader1_0"}
-				]
-}

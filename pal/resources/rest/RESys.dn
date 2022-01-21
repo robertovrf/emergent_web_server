@@ -1,0 +1,6 @@
+uses data.String
+
+interface RESys extends monitoring.Perception {
+	/* RESys functions */
+	RESys(char ip[], int port)
+}

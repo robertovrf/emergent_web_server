@@ -1,7 +1,0 @@
-{
-defaultLinks:	[
-				{"interface": "Exploration", "component": "Exploration"},
-				{"interface": "Learning", "component": "LearningUCBOld"},
-				{"interface": "LearningUCB", "component": "LearningUCB"},
-				]
-}

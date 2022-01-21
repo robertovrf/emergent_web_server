@@ -1,7 +1,0 @@
-uses stream.Stream
-uses data.adt.HashTable
-
-interface DanaPedia {
-	void pageNotFound(stream.Stream doc)
-	void action(HashTable hashedHTTPData, stream.Stream doc)	
-}

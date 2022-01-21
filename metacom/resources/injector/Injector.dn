@@ -1,9 +1,0 @@
-interface Injector {
-	event triggerChangeState()
-	Data[] getData()
-	void triggerAdaptation()
-	void toInjectData(store Data dt[])
-	void toInjectObject(store Object object)
-	void inject(IDC comp)
-	bool shouldInject(IDC comp)	
-}

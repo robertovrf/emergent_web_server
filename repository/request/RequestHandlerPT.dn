@@ -23,7 +23,7 @@ data WorkerThread {
 const char debugMSG[] = "[@RequestHandlerPT]"
 const int NUM_THREADS = 10
 
-component provides request.RequestHandler(Destructor) requires io.Output out, data.IntUtil iu, app_protocols.AppProtocol appProtocol {
+component provides request.RequestHandler(Destructor, AdaptEvents) requires io.Output out, data.IntUtil iu, app_protocols.AppProtocol appProtocol {
 	bool setupDone
 	WorkerThread workers
 	WorkerThread lastWorker
@@ -88,14 +88,22 @@ component provides request.RequestHandler(Destructor) requires io.Output out, da
 	}
 
 	void Destructor:destroy() {
+		// depricated ???
+  	}
+
+  	void AdaptEvents:inactive() {
 		WorkerThread wt = workers
 		destroying = true
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < NUM_THREADS; i++) {
 			if (wt != null) {
 				wt.thread.signal()
 				wt.thread.join()
 				wt = wt.next
 			} else { break }
 		}
-  	}
+	}
+
+	void AdaptEvents:active() {
+		/* NOTHINNNNNNG */
+	}
 }

@@ -1,0 +1,223 @@
+// Learning
+//
+// This component implements the Learning module.
+// 
+// Author: Roberto Rodrigues Filho
+// March @ 2017
+
+const char debugMSG[]			= "[@Learning]"
+/* system info */
+const char IP[]  				= "localhost" // emergent system
+const int PORT 					= 2011
+/* learning stages */
+const char EXIT[] 				= "exit"
+const char STARTEXPLORING[] 	= "start_exploring"
+const char EXPLORATION[] 		= "exploration"
+const char EXPLOITATION[] 		= "exploitation"
+
+component provides learning.Learning requires io.Output out, data.IntUtil iu, time.Timer t, 
+	learning.LearningCore, rest.RESys, data.StringUtil strUtil, io.File, 
+	data.json.JSONParser parser, data.json.JSONEncoder encoder, data.DecUtil du, io.Input in {
+
+	// external modules
+	LearningCore core 		= null // this is responsible to makeDecision based on the collected data
+	// control variables
+	String configList[] 	= null // this won't change
+	String proxyList[] 		= null // this won't change
+	char mode[] 			= null // this controls the learning status
+	char currentConfig[]	= null // stores the current config in array
+	int exceeded 			= 0
+	RESys sys 			= null
+	/* exceeded controls how many times the system can suffer */
+	/* from fluctuations before it changes */
+	/* learning parameters values */
+	int TRESHOLD 				= 3
+	int COLLECTION_TIME 		= 5000
+
+	void waitCollection() {
+		t.sleep(COLLECTION_TIME)
+	}
+
+	//NOTE: the way this code is organised we're calling functions twice in LearningCore...
+	// only function that is allowed to change mode variable (phase) is the process function
+	void process(char perceptionData[]) {
+		//writeToFile(parsePerceptionData(perceptionData)) //added here...
+		out.println("$(debugMSG) $(parsePerceptionData(perceptionData))")
+		if (mode == STARTEXPLORING) {
+			char followupAction[] = core.considerData(currentConfig, perceptionData)
+			if (followupAction == LearningCore.CLASS_DETECTED) {
+				currentConfig = core.bestConfig(perceptionData)
+				sys.setConfig(currentConfig)// this was added here
+				mode = EXPLOITATION
+			} else if (followupAction == LearningCore.CONTINUE_EXPLORATION) {
+				core.exploring(currentConfig, perceptionData)
+				mode = EXPLORATION
+			}
+		} else if (mode == EXPLORATION) {
+			core.exploring(currentConfig, perceptionData)
+			// explorationVisitedAllConfigs for a specific cycle.
+			if (core.explorationVisitedAllConfigs()) {
+				//out.println("$(debugMSG) Processing explored data...")
+				char cycleResult[] = core.exploit()
+				core.latestCycleResult(cycleResult)
+				if (core.isLastCycle()) {
+					out.println("$(debugMSG) Found best composition. Changing to EXPLOITATION mode!")
+					currentConfig = cycleResult
+					core.pushWinningArchToKNowledge() // this was added here
+					sys.setConfig(currentConfig) // only place in process that calls setConfig
+					mode = EXPLOITATION
+					//printInfoArchicture(currentConfig) // debug
+				}
+			}
+		} else if (mode == EXPLOITATION) {
+			char status[] = core.checkSysStatus(perceptionData, currentConfig)
+			if (status == LearningCore.CONTINUE_EXPLOITATION) {
+				//out.println("$(debugMSG) Continue EXPLOITATION mode!")
+				exceeded = 0
+			} else {
+				exceeded++
+				if (exceeded == TRESHOLD) {
+					exceeded = 0
+					if (status == LearningCore.TRIGGER_EXPLORATION) {
+						out.println("$(debugMSG) Triggered EXPLORATION mode")
+						mode = STARTEXPLORING
+					} else {
+						out.println("$(debugMSG) Changed to best configuration for the detected pattern.")
+						currentConfig = status
+						sys.setConfig(status)
+					}
+				}
+			}
+		}
+	}
+
+	void printInfoArchicture(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/http/handler/GET/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				out.println("$(debugMSG) Changed to: $(helper[helper.arrayLength-1].string)")
+				return
+			}
+		}
+		out.println("$(debugMSG) Something bad's happened!")
+	}
+
+	char[] getInfoArchitecture(char arch[]) {
+		char req[] = getRequest(arch)
+		char def[] = getGET(arch)
+		char cmp[] = getCMP(arch)
+		char ch[] = getCH(arch)
+		char result[] = null
+		if (req != null) {
+			result = new char[](req)
+		}
+		if (def != null) {
+			result = new char[](result, ", ", def)
+		}
+		if (cmp != null) {
+			result = new char[](result, ", ", cmp)
+		}
+		if (ch != null) {
+			result = new char[](result, ", ", ch)	
+		}
+		return result
+	}
+
+	char[] getRequest(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/request/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
+	char[] getGET(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/http/handler/GET/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
+	char[] getCMP(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/compression/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
+	char[] getCH(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/cache/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
+	// WARNING: if this is on the exploration phase and you keep calling this function it will cycle forever...
+	char[] getConfig() {
+		if (mode == STARTEXPLORING) { currentConfig = core.explorationRestart() }
+		else if (mode == EXPLORATION) {	currentConfig = core.explorationGetNext() }
+		else if (mode == EXPLOITATION) { /* just return current */ }
+		return currentConfig
+	}
+
+	void Learning:learns(RESys resys, int collectionTime, int explorationTreshold,
+	 int rounds) {
+		sys = resys
+		TRESHOLD = explorationTreshold
+		COLLECTION_TIME = collectionTime
+		configList = sys.getAllConfigs()
+		core = new LearningCore(configList)
+		mode = STARTEXPLORING
+		out.println("$(debugMSG) Learning started...")
+		for (int count = 0; count < rounds; count++) {
+			if ((mode == EXPLORATION) || (mode == STARTEXPLORING)) { 
+				char config[] = getConfig() // why ????
+				sys.setConfig(config)
+			}
+			else if (mode == EXPLOITATION) { /* does nothing ... */ }
+			else { throw new Exception("Invalid phase.") }
+			if (count == 0) {
+				// clean perception data
+				sys.getPerceptionData()
+			}
+			waitCollection()
+			process(sys.getPerceptionData())
+		}
+	}
+
+	char[] parsePerceptionData(char perceptionData[]) {
+		if (perceptionData == "{}") { return new char[]("{}") }
+		char result[] = ""
+		dec value = 0
+		int count = 0
+		PerceptionData pD[] = encoder.jsonToArray(perceptionData, typeof(PerceptionData[]), null)
+		if (((pD != null) && (pD.arrayLength > 0)) && (pD[0].metrics.arrayLength > 0)) {
+			result = new char[]("[ ", getInfoArchitecture(pD[0].config), " ]: ")
+			value = pD[0].metrics[0].value
+			count = pD[0].metrics[0].counter
+			dec metricValue = value/count
+			result = new char[](result, du.decToString(metricValue))
+		} else {
+			out.println("$(debugMSG) ERROR: No perception data.")
+			return null
+		}
+		return result
+	}
+
+}

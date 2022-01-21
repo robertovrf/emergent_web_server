@@ -1,4 +1,0 @@
-interface BoolUtil {
-	bool boolFromString(char value[])
-	char[] boolToString(bool value)
-}

@@ -1,0 +1,200 @@
+// LearningCore
+//
+// This component implements the core of the Learning modules. This involves the following:
+// 1. classification algorithm
+// 2. algorithm responsible to select the  
+//
+// Author: Roberto Rodrigues Filho
+// March @ 2017
+
+uses monitoring.Perception
+
+// environment class
+data EnvClass {
+	Range ranges[]
+	char config[]
+}
+
+data Range {
+	dec highestValue
+	dec lowestValue
+	char dimension[]
+}
+
+// exploration cycle
+data ExplCycle {
+	Event events[]
+	Metric metrics[] // there is a leading metric
+	char config[]
+}
+
+const char debugMSG[] = "[@LearningCore]"
+
+// this could use a database --- but I've decided not to...
+component provides learning.LearningCore requires io.Output out, data.IntUtil iu, learning.Exploration,
+	time.DateUtil dateUtil, data.StringUtil strUtil, data.json.JSONParser parser, 
+	data.json.JSONEncoder encoder, data.DecUtil du, io.File {
+	
+	EnvClass latestKnowledgeInfo 	= null
+	EnvClass knowledge[] 			= null // all classes that was identified -- knowledge base?
+	ExplCycle cycle[] 				= null // values (metrics and events) that belong to a specific cycle
+	Exploration exploration 		= null
+
+	LearningCore:LearningCore(String configs[]) {
+		exploration = new Exploration(configs)
+	}
+
+	void LearningCore:exploring(char currentConfig[], char perceptionData[]) {
+		ExplCycle explCycle = parsePerceptionData(perceptionData)
+		explCycle.config = currentConfig
+		cycle = new ExplCycle[](cycle, explCycle)
+	}
+
+	// TODO: everytime I am running learning I am tampering with the knowledge results.
+	// the knowledge should only be updated after the last cycle.
+	// MY SOLUTION TO THIS PROBLEM IS STORE THE CONFIG AND RANGES IN A GLOBAL VARIABLE
+	// THIS GLOBAL VARIABLE WILL HOLD ONLY THE LATEST CONFIG AND RANGE AFTER CALLING EXPLOIT FUNCTION
+	// THEREFORE, WHENEVER ADDWINNINGARCH IS CALLED, IT WILL TAKE THE LATEST CONFIG AND RANGES AND 
+	// STORE THEM INTO THE KNOWLEDGE FUNCTION -- THIS SHOULD FIX THE ISSUE (:
+	void LearningCore:pushWinningArchToKNowledge() {
+		knowledge = new EnvClass[](knowledge, new EnvClass())
+		knowledge[knowledge.arrayLength-1].config = latestKnowledgeInfo.config
+		knowledge[knowledge.arrayLength-1].ranges = latestKnowledgeInfo.ranges
+	}
+
+	// this is precisely where the machine learning algorithm is implemented...
+	char[] LearningCore:exploit() {
+		if (cycle != null) {
+			latestKnowledgeInfo = new EnvClass()
+			// first range is 
+			Range ranges[] = new Range[](new Range(0,9999999, new char[]("metrics")))
+			int bestArchPointer = 0
+			for (int pointer = 0; pointer < cycle.arrayLength; pointer++) {
+				// metrics
+				dec cycleRealMetricValue = cycle[pointer].metrics[0].value/cycle[pointer].metrics[0].counter
+				if (ranges[0].lowestValue > cycleRealMetricValue) {
+					ranges[0].lowestValue = cycleRealMetricValue
+					latestKnowledgeInfo.config = cycle[pointer].config
+				}
+				if (ranges[0].highestValue < cycleRealMetricValue) { 
+					ranges[0].highestValue = cycleRealMetricValue
+				}
+				// events
+				for (int pointer2 = 0; pointer2 < cycle[pointer].events.arrayLength; pointer2++) {
+					char dimension[] = cycle[pointer].events[pointer2].type
+					int rangePointer = INT_MAX
+					// verifies if dimension is already in ranges...
+					for (int pointer3 = 0; pointer3 < ranges.arrayLength; pointer3++) {
+						if (dimension == ranges[pointer3].dimension) { rangePointer = pointer3 }
+					}
+					if (rangePointer != INT_MAX) {
+						dec cycleRealEventValue = cycle[pointer].events[pointer2].quantifier/cycle[pointer].events[pointer2].counter
+						if (ranges[rangePointer].lowestValue > cycleRealEventValue) {
+							ranges[rangePointer].lowestValue = cycleRealEventValue
+						}
+						if (ranges[rangePointer].highestValue < cycleRealEventValue) {
+							ranges[rangePointer].highestValue = cycleRealEventValue
+						}
+					} else {
+						ranges = new Range[](ranges, new Range(cycle[pointer].events[pointer2].quantifier,
+							cycle[pointer].events[pointer2].quantifier, dimension))
+					}
+				}
+			}
+			cycle = null
+			latestKnowledgeInfo.ranges = ranges
+			return latestKnowledgeInfo.config
+		}
+		return null
+	}
+
+	char[] LearningCore:bestConfig(char perceptionData[]) {
+		if (knowledge == null) { return null }
+		ExplCycle explCycle = parsePerceptionData(perceptionData)
+		for (int pointer = 0; pointer < knowledge.arrayLength; pointer++) {
+			if ((explCycle.events.arrayLength+1) == knowledge[pointer].ranges.arrayLength) {
+				dec metricCycleValue = explCycle.metrics[0].value/explCycle.metrics[0].counter
+				if (metricCycleValue <= knowledge[pointer].ranges[0].highestValue) {
+					bool isWithinRanges = true
+					for (int rangePointer = 1; rangePointer < knowledge[pointer].ranges.arrayLength; rangePointer++) {
+						int eCPointer = getExplCycleMatchingDimension(explCycle, knowledge[pointer].ranges[rangePointer].dimension)
+						if (eCPointer < INT_MAX) {
+							dec eventCycleValue = explCycle.events[eCPointer].quantifier/explCycle.events[eCPointer].counter
+							if (eventCycleValue >= knowledge[pointer].ranges[rangePointer].lowestValue) { /* is within the range */ }
+							else {
+								isWithinRanges = false
+								break
+							}
+						} else {
+							isWithinRanges = false
+							break
+						}
+					}
+					if (isWithinRanges) { return knowledge[pointer].config }
+				}
+			} else { /* verify next item in knowledge list */ }
+		}
+		return null
+	}
+
+	// this function seem a bit unecessary...
+	char[] LearningCore:considerData(char currentConfig[], char perceptionData[]) {
+		if (knowledge != null) {
+			if (bestConfig(perceptionData) != null) { return LearningCore.CLASS_DETECTED }
+		}
+		return LearningCore.CONTINUE_EXPLORATION
+	}
+
+	char[] LearningCore:checkSysStatus(char perceptionData[], char currentConfig[]) {
+		char newConfig[] = null
+		if (knowledge != null) {
+			if ((newConfig = bestConfig(perceptionData)) != null) {
+				if (newConfig != currentConfig) { return newConfig }
+				return LearningCore.CONTINUE_EXPLOITATION
+			}
+		}
+		return LearningCore.TRIGGER_EXPLORATION	
+	}
+
+	char[] LearningCore:explorationRestart() {
+		return exploration.restart()
+	}
+
+	char[] LearningCore:explorationGetNext() {
+		return exploration.getNext()
+	}
+
+	bool LearningCore:explorationVisitedAllConfigs() {
+		return exploration.visitedAllConfigs()
+	}
+
+	void LearningCore:latestCycleResult(char result[]) {
+		exploration.latestCycleResult(result)
+	}
+
+	bool LearningCore:isLastCycle() {
+		return exploration.isLastCycle()
+	}
+
+	int getExplCycleMatchingDimension(ExplCycle eC, char dimension[]) {
+		for (int pointer = 0; pointer < eC.events.arrayLength; pointer++) {
+			if (eC.events[pointer].type == dimension) {
+				return pointer
+			}
+		}
+		return INT_MAX
+	}
+
+	ExplCycle parsePerceptionData(char perceptionData[]) {
+		ExplCycle internalCycle = new ExplCycle()
+		PerceptionData pD[] = encoder.jsonToArray(perceptionData, typeof(PerceptionData[]), null)
+		if (((pD != null) && (pD.arrayLength > 0)) && (pD[0].metrics.arrayLength > 0)) {
+			internalCycle.metrics = pD[0].metrics
+			internalCycle.events = pD[0].events
+		} else {
+			out.println("$(debugMSG) ERROR: No perception data.")
+			return null
+		}
+		return internalCycle
+	}
+}

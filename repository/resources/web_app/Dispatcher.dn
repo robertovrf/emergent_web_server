@@ -1,6 +1,0 @@
-uses data.adt.HashTable
-uses net.TCPSocket
-
-interface Dispatcher {
-	void process(char resource[], char method[], HashTable hashedHTTPData, TCPSocket socket)
-}

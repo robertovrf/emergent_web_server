@@ -41,8 +41,8 @@ interface HTTPUtil {
 	const char htdocs[] = "../repository/htdocs"
 	const int BUFF_SIZE = 1000
 	const char SERVER_NAME[] = "Dana Web Platform"
-	HTTPMessage readHeader(TCPSocket s)
-	HTTPMessage getMessage(HTTPMessage header)
-	HTTPMessage readHTTPRequest(TCPSocket s)
+	HTTPMessage readHeader(store TCPSocket s)
+	HTTPMessage getMessage(store HTTPMessage header)
+	HTTPMessage readHTTPRequest(store TCPSocket s)
 	HTTPMessage parseHTTPRequest(char buf[])
 }

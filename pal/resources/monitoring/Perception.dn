@@ -1,0 +1,15 @@
+uses monitoring.BeingMonitored
+
+data PerceptionData {
+	char config[]
+	Metric metrics[]
+	Event events[]
+}
+
+interface Perception extends composition.Assembly {
+	Perception(bool verbose)
+	char[] getPerceptionData()//return json
+	void addProxy(char exp[])
+	void removeProxy(char proxyExp[])
+	String[] getProxies()
+}

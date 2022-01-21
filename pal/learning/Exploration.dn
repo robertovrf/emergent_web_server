@@ -1,0 +1,72 @@
+// Exploration
+//
+// This component implements the Exploration module.
+// 
+// Author: Roberto Rodrigues Filho
+// March @ 2017
+
+data Tree {
+	String configs[]
+}
+
+component provides learning.Exploration requires io.Output out, data.IntUtil iu {
+	String configList[] = null
+	Tree tree[] = null // the level is indicated by the array index
+	int level = 0 // points to the first level
+	int variant = 0 // pointer to the first config of a given level
+
+	//exploration 	= new Exploration(configList)
+	Exploration:Exploration(String configs[]) {
+		configList = configs
+		buildTree()
+	}
+
+	char[] Exploration:restart() {
+		level = 0
+		variant = 0
+		return tree[level].configs[variant].string
+	}
+
+	char[] Exploration:getNext() {
+		variant++
+		if (variant == tree[level].configs.arrayLength) {
+			level++
+			if (level == tree.arrayLength) { level = 0 }
+			variant = 0
+		}
+		return tree[level].configs[variant].string
+	}
+
+	// TODO: check -> does this make sense?
+	bool Exploration:visitedAllConfigs() {
+		if ((variant+1) == tree[level].configs.arrayLength) {
+			if ((level+1) == tree.arrayLength) {
+				return true
+			}
+		}
+		return false
+	}
+
+	void Exploration:latestCycleResult(char result[]) {
+		/*  do nothing ... */
+	}
+
+	bool Exploration:isLastCycle() {
+		return visitedAllConfigs()
+	}
+
+	// TODO: implement new approach...
+	void buildTree() {
+		/* brute force approach */
+		tree = new Tree[getNumLevels()]()
+		for (int pointer = 0; pointer < tree.arrayLength; pointer++) {
+			tree[pointer] = new Tree()
+			tree[pointer].configs = new String[](new String(configList[pointer].string))
+		}
+	}
+
+	// TODO:implement new approach... based on the configList
+	int getNumLevels() {
+		return configList.arrayLength
+	}
+}

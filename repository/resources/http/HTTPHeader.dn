@@ -1,5 +1,5 @@
 uses net.TCPSocket
 
 interface HTTPHeader {
-	void processRequest(TCPSocket s)
+	void processRequest(store TCPSocket s)
 }

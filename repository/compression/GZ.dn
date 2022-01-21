@@ -1,25 +1,15 @@
 const char debugMSG[] = "[@GZIP]"
 
-component provides compression.Compression requires io.Output out, data.IntUtil iu, os.Run run, time.DateUtil dateUtil, io.FileSystem fileSystem {
+component provides compression.Compression requires io.Output out, data.IntUtil iu,
+	io.File, compress.Compressor:gzip compressor {
+	
 	char[] Compression:compressResource(char resource[]) {
-		// verify if zipped exists
-		// if it does and if it was created after the original
-		// just return it, without zipping
-		// otherwise, zip it!
-		char fileZipped[] = new char[](resource, ".gz")
-		/*if (fileSystem.exists(fileZipped)) {
-			DateTime original = fileSystem.getInfo(resource).modified
-			DateTime zipped = fileSystem.getInfo(fileZipped).modified
-			if (dateUtil.after(zipped, original)) { return fileZipped }
-		}*/
-		char newName[] = ""
-		// previous version was: gzip -k -f
-		// -k means keep with the original unzipped file
-		// -f force the creation of the zipped file even if one has already been created
-		// new command: -c copies resulted zipped file to stdout
-		char osCommand[] = new char[]("gzip -c ", resource, " > ", fileZipped)
-		RunStatus rS = run.execute(osCommand)
-		if (rS.executed) { newName = fileZipped }
+		char newName[] = "$(resource).gz"
+		File output = new File(newName, File.WRITE)
+		File input = new File(resource, File.READ)
+		compressor.compress(input, output)
+		output.close()
+		input.close()
 		return newName
 	}
 

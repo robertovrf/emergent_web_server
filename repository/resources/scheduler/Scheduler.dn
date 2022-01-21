@@ -1,6 +1,0 @@
-uses net.TCPSocket
-uses http.util.HTTPUtil
-
-interface Scheduler {
-	TCPSocket getServer(store HTTPMessage httpHeader)
-}

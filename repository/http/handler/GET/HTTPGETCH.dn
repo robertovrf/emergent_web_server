@@ -8,21 +8,14 @@
 const char debugMSG[] = "[@HTTPGETCH]"
 
 component provides http.handler.GET.HTTPGET requires io.Output out, data.IntUtil iu, io.File, cache.CacheHandler ch, 
-	io.FileSystem fileSystem, http.handler.DCH.DCHandler dch {
+	io.FileSystem fileSystem {
 
 	void HTTPGET:handleRequest(HTTPMessage header) {
 		if (header == null) { return }
 		if (header.command == "GET") {
-			if (header.mimeType == "dn") { dch.process(header) }
-			else { processCache(header) }
-		} else if (header.command == "POST") {
-			dch.process(header)
-		} else if (header.command == "DELETE") {
-			dch.process(header)
-		} else if (header.command == "PUT") {
-			dch.process(header)
+			processRequest(header)
 		} else {
-			header.socket.send("HTTP/1.1 501 Not Implemented\r\n")
+			header.socket.send("HTTP/1.0 501 Not Implemented\r\n")
 			header.socket.send("Server: $(HTTPUtil.SERVER_NAME)\r\n")
 			header.socket.send("Connection: close\r\n")
 			header.socket.send("\r\n")

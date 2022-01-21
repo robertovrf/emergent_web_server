@@ -7,22 +7,14 @@
 
 const char debugMSG[] = "[@HTTPGET]"
 
-component provides http.handler.GET.HTTPGET requires io.Output out, data.IntUtil iu, io.File, 
-	http.handler.DCH.DCHandler dch {
+component provides http.handler.GET.HTTPGET requires io.Output out, data.IntUtil iu, io.File {
 	
 	void HTTPGET:handleRequest(HTTPMessage header) {
 		if (header == null) { return }
 		if (header.command == "GET") {
-			if (header.mimeType == "dn") { dch.process(header) }
-			else { processRequest(header) }
-		} else if (header.command == "POST") {
-			dch.process(header)
-		} else if (header.command == "DELETE") {
-			dch.process(header)
-		} else if (header.command == "PUT") {
-			dch.process(header)
+			processRequest(header)
 		} else {
-			header.socket.send("HTTP/1.1 501 Not Implemented\r\n")
+			header.socket.send("HTTP/1.0 501 Not Implemented\r\n")
 			header.socket.send("Server: $(HTTPUtil.SERVER_NAME)\r\n")
 			header.socket.send("Connection: close\r\n")
 			header.socket.send("\r\n")
@@ -47,7 +39,7 @@ component provides http.handler.GET.HTTPGET requires io.Output out, data.IntUtil
 			}
 			fd.close()
 		} else {
-			httpMessage.socket.send("HTTP/1.1 404 Resource Not Found\r\n")
+			httpMessage.socket.send("HTTP/1.0 404 Resource Not Found\r\n")
 			httpMessage.socket.send("Server: $(HTTPUtil.SERVER_NAME)\r\n")
 			httpMessage.socket.send("Connection: close\r\n")
 			httpMessage.socket.send("\r\n")

@@ -1,0 +1,143 @@
+// InteractiveEmergentSys.dn
+// A component that provides interactive access to EmergentSys component
+//
+// Author: Roberto Rodrigues Filho
+// Jun @ 2020
+const char debugMSG[] = "[@InteractiveEmergentSys]"
+
+/* command line */
+const char HELP[] 			 		= "help"
+const char GET_CONFIG[]		 		= "get_config"
+const char GET_ALL_CONFIGS[] 		= "get_all_configs"
+const char SET_CONFIG[]   	 		= "set_config"
+const char ADD_COMP[] 		 		= "add_comp"
+const char REMOVE_COMP[] 	 		= "remove_comp"
+const char ADD_PROXY[]		 		= "add_proxy"
+const char REMOVE_PROXY[]	 		= "remove_proxy"
+const char GET_PERCEPTION[] 		= "get_perception"
+const char LEARN[]					= "learn"
+const char EXIT[] 			 		= "exit"
+
+/* EmergentSys ip and port */
+const char IP[] = "localhost"
+const int PORT = 2011
+
+
+component provides App requires io.Output out, data.IntUtil iu, rest.RESys, io.Input in,
+	data.StringUtil strUtil, io.TextFile, os.SystemInfo info, time.Timer t, data.DecUtil du,
+	data.json.JSONParser parser, data.json.JSONEncoder encoder, learning.Learning learner {
+
+	RESys sys = null
+	String configsStr[] = null
+
+	void help() {
+		out.println("\n$(debugMSG) Command list:")
+		out.println("$(debugMSG)  $(HELP)                      - lists all commands")
+		out.println("$(debugMSG)  $(GET_CONFIG)                - shows current config")
+		out.println("$(debugMSG)  $(GET_ALL_CONFIGS)           - lists all configs")
+		out.println("$(debugMSG)  $(SET_CONFIG) numConfig      - sets EWS config to the config number 'numConfig (e.g., $(SET_CONFIG) 2)")
+		out.println("$(debugMSG)  $(ADD_COMP) pathToComp       - adds component (e.g., $(ADD_COMP) ../repository/cache/CacheHandler.o)")
+		out.println("$(debugMSG)  $(REMOVE_COMP) pathToComp    - removes a component (e.g., $(REMOVE_COMP) ../repository/cache/CacheHandler.o)")
+		out.println("$(debugMSG)  $(ADD_PROXY) exp             - adds proxy using the expression exp (look at readme on how to define exp)")
+		out.println("$(debugMSG)  $(REMOVE_PROXY) pathToproxy  - removes proxy (e.g., $(REMOVE_PROXY) ../pal/monitoring/proxies/HTTPProxy.o)")
+		out.println("$(debugMSG)  $(GET_PERCEPTION)            - gets perception data from current running EWS config")
+		out.println("$(debugMSG)  $(LEARN)                     - executes the baseline learning algorithm -- more information on readme")
+		out.println("$(debugMSG)  $(EXIT)                      - exists InteractiveEmergentSys\n")
+	}
+
+	void commandInterpret(char cmd[]) {
+		int collect_number = 1
+		String cmdList[] = strUtil.explode(cmd, " ")
+		int counter = 0
+		if (cmdList.arrayLength == 1) {
+			if (cmd == HELP) { help() }
+			else if (cmd == GET_CONFIG) {
+				out.println("$(debugMSG) Current config: $(sys.getConfig())")
+			} else if (cmd == GET_ALL_CONFIGS) {
+				configsStr = sys.getAllConfigs()
+				out.println("$(debugMSG) $(iu.intToString(configsStr.arrayLength)) configs:")
+				for (int i = 0; i < configsStr.arrayLength; i++) {
+					out.println("$(debugMSG) $(iu.intToString(i)): $(configsStr[i].string)")
+				}
+			} else if (cmdList[0].string == GET_PERCEPTION) {
+				handlePerception(sys.getPerceptionData(), null)
+			} else if (cmdList[0].string == LEARN) {
+				configsStr = sys.getAllConfigs()
+				int collectionTime = 0
+				int explorationTreshold = 0
+				int rounds = 0
+				out.println("$(debugMSG) Learning setup\n $(debugMSG) Please provide the size of the observation window (in ms):")
+				out.print("learn> ")
+				collectionTime = iu.intFromString(in.readln())
+				out.println("$(debugMSG) Exploration treshold: ")
+				out.print("learn> ")
+				explorationTreshold = iu.intFromString(in.readln())
+				out.println("$(debugMSG) Number of rounds for learning: ")
+				out.print("learn> ")
+				rounds = iu.intFromString(in.readln())
+				int colTimeS = collectionTime/1000
+				dec timeLearn =  configsStr.arrayLength * colTimeS
+				if (timeLearn > 60.0) {
+					timeLearn = timeLearn / 60.0
+					out.println("$(debugMSG) All setup. Learning will take at least $(du.decToString(timeLearn)) min.") 
+				} else {
+					out.println("$(debugMSG) All setup. Learning will take at least $(du.decToString(timeLearn)) segs.")
+				}
+				out.print("$(debugMSG) Press [ENTER] to start learning...")
+				in.readln()
+				out.println("$(debugMSG) Starting learning...")
+				learner.learns(sys, collectionTime, explorationTreshold, rounds)
+			} else { out.println("$(debugMSG) Invalid command.") }
+		} else if (cmdList.arrayLength >= 2) {
+			if (cmdList[0].string == SET_CONFIG) {
+				int indexConfig = iu.intFromString(cmdList[1].string)
+				sys.setConfig(configsStr[indexConfig].string)
+			} else if (cmdList[0].string == ADD_COMP) {
+				out.println("$(debugMSG) This may take a while. Please wait...")
+				sys.addComp(new String[](new String(strUtil.subString(cmd, (ADD_COMP.arrayLength+1),(cmd.arrayLength-ADD_COMP.arrayLength-1)))))
+			} else if (cmdList[0].string == REMOVE_COMP) {
+				sys.removeComp(new String[](new String(strUtil.subString(cmd, (REMOVE_COMP.arrayLength+1),(cmd.arrayLength-REMOVE_COMP.arrayLength-1)))))
+			} else if (cmdList[0].string == REMOVE_PROXY) {
+				sys.removeProxy(strUtil.subString(cmd, (REMOVE_PROXY.arrayLength+1),(cmd.arrayLength-REMOVE_PROXY.arrayLength-1)))
+			} else if (cmdList[0].string == ADD_PROXY) {
+				out.println("$(debugMSG) This may take a while. Please wait...")
+				sys.addProxy(strUtil.subString(cmd, (ADD_PROXY.arrayLength+1),(cmd.arrayLength-ADD_PROXY.arrayLength-1)))
+			} else { out.println("$(debugMSG) Invalid command.") }
+		} else { out.println("$(debugMSG) Invalid command.") }
+	}
+
+	void handlePerception(char perceptionData[], TextFile file) {
+		PerceptionData pD[] = encoder.jsonToArray(perceptionData, typeof(PerceptionData[]), null)
+		if (((pD != null) && (pD.arrayLength > 0)) && (pD[0].metrics.arrayLength > 0)) {
+			for (int i = 0; i < pD.arrayLength; i++) {
+				for (int j = 0; j < pD[i].metrics.arrayLength; j++) {
+					dec metricValue = pD[i].metrics[j].value / pD[i].metrics[j].counter
+					out.println("$(pD[i].metrics[j].name): $(du.decToString(metricValue)) - $(iu.intToString(pD[i].metrics[j].counter))")
+				}
+			}
+		} else {
+			out.println("$(debugMSG) No perception data.")
+		}
+	}
+
+	int App:main(AppParam param[]) {
+		sys = new RESys(IP, PORT)
+		String configs[] = sys.getAllConfigs()
+		if (configs == null) {
+			out.println("$(debugMSG) Starting up the EWS. Please wait. This may take a while.")
+			sys.setMain("../repository/TCPNetwork.o", null)
+			out.println("$(debugMSG) System running.")
+			out.println("$(debugMSG) Adding proxy. Please wait. This may take a while.")
+			sys.addProxy("|../pal/monitoring/proxies/HTTPProxy.o|*(*:http.handler.GET.HTTPGET[0]:*)|")
+			out.println("$(debugMSG) Proxy added!")
+		}
+		char cmd[] = "start"
+		while (cmd != "exit") {
+			if (cmd != "start") { commandInterpret(cmd)	}
+			out.print("$(debugMSG) sys> ")
+			cmd = in.readln()
+		}
+		out.println("$(debugMSG) Bye now! (:")
+		return 0
+	}
+}

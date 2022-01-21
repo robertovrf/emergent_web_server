@@ -1,5 +1,0 @@
-interface DistUCB {
-	void start(char rootComp[], char address[], int port)
-	void stop()
-	void setProxy(char address[], int port)
-}

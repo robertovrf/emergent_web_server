@@ -1,5 +1,5 @@
 uses net.TCPSocket
 
 interface RequestHandler {
-	void handleRequest(TCPSocket s)
+	void handleRequest(store TCPSocket s)
 }
