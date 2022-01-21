@@ -140,7 +140,7 @@ _$ dana ClientImagePattern.o_
 
 ### Python module: PyEWS
 
-More information on: https://github.com/EGAlberts/pyews
+More information at: https://github.com/EGAlberts/pyews
 
 ## Troubleshooting
 
