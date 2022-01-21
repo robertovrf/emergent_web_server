@@ -24,7 +24,7 @@ After typing this command on your terminal, you should get a terminal inside the
 
 _# dana -sp ../repository InteractiveEmergentSys.o_
 
-**NOTE:** The command above should be typed inside the EWS container. In the _emergent\_web\_server/pal_ folder. 
+**NOTE:** The command above should be typed inside the EWS container, inside the _emergent\_web\_server/pal_ folder. 
 
 ### Interactive Emergent System
 
