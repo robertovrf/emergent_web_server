@@ -6,4 +6,4 @@ ENV DANA_HOME=/home/roberto/dana/
 ENV PATH="${PATH}:/home/roberto/dana/"
 WORKDIR /home/roberto/emergent_web_server/pal/
 
-ENTRYPOINT ["/bin/bash", "./../docker/emergentsys.sh"]
+ENTRYPOINT ["/bin/bash", "./../Docker/emergentsys.sh"]
