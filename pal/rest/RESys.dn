@@ -35,17 +35,20 @@ component provides rest.RESys requires io.Output out, data.IntUtil iu, net.TCPSo
 	void RESys:setMain(char path[], AppParam params[]) {
 		char payload[] = new char[]("{\"comp\":\"", path, "\"}")
 		HTTPMessage msg = makeRequest("POST", SET_MAIN, payload)
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status != 200) { out.println("$(debugMSG) Something went wrong!") }
 	}
 
 	String[] RESys:getAllConfigs() {
 		HTTPMessage msg = makeRequest("GET", GET_ALL_CONFIGS, "")
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status == 200) { return parseJSONToConfigs(msg.postData) }
 		return null
 	}
 
 	char[] RESys:getConfig() {
 		HTTPMessage msg = makeRequest("GET", GET_CONFIG, "")
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status == 200) { return parseJSONToConfig(msg.postData) }
 		return null
 	}
@@ -53,6 +56,7 @@ component provides rest.RESys requires io.Output out, data.IntUtil iu, net.TCPSo
 	bool RESys:setConfig(char config[]) {
 		char payload[] = new char[]("{\"config\":\"", config, "\"}")
 		HTTPMessage msg = makeRequest("POST", SET_CONFIG, payload)
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status != 200) {
 			out.println("$(debugMSG) Something went wrong!")
 			return false
@@ -63,36 +67,42 @@ component provides rest.RESys requires io.Output out, data.IntUtil iu, net.TCPSo
 	void RESys:removeComp(String compPaths[]) {
 		char payload[] = new char[]("{\"comps\":", parseListToJSON(compPaths), "}")
 		HTTPMessage msg = makeRequest("POST", REMOVE_COMP, payload)
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status != 200) { out.println("$(debugMSG) Something went wrong!") }
 	}
 
 	void RESys:addComp(String compPaths[]) {
 		char payload[] = new char[]("{\"comps\":", parseListToJSON(compPaths), "}")
 		HTTPMessage msg = makeRequest("POST", ADD_COMP, payload)
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status != 200) { out.println("$(debugMSG) Something went wrong!") }
 	}
 
 	void RESys:addProxy(char exp[]) {
 		char payload[] = new char[]("{\"exp\": \"", exp, "\"}")
 		HTTPMessage msg = makeRequest("POST", ADD_PROXY, payload)
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status != 200) { out.println("$(debugMSG) Something went wrong!") }
 	}
 
 	void RESys:removeProxy(char proxyPaths[]) {
-		char payload[] = new char[]("{\"proxies\": \"", proxyPaths, "\"}")
+		char payload[] = new char[]("{\"proxy\": \"", proxyPaths, "\"}")
 		HTTPMessage msg = makeRequest("POST", REMOVE_PROXY, payload)
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status != 200) { out.println("$(debugMSG) Something went wrong!") }
 	}
 
 	// returns json -- the parser will be done later 
 	char[] RESys:getPerceptionData() {
 		HTTPMessage msg = makeRequest("GET", GET_PERCEPTION, "")
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status == 200) { return msg.postData }
 		return null
 	}
 
 	String[] RESys:getProxies() {
 		HTTPMessage msg = makeRequest("GET", GET_PROXIES, "")
+		//out.println("JSON: $(msg.postData)")
 		if (msg.status == 200) { return parseJSONToProxies(msg.postData) }
 		return null
 	}

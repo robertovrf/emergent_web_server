@@ -55,7 +55,7 @@ component provides App requires io.Output out, data.IntUtil iu, monitoring.Perce
 			else if (msg.resource == SET_MAIN) { result = parseJSONString(msg.postData, "comp") }
 			else if ((msg.resource == ADD_COMP) 
 				|| (msg.resource == REMOVE_COMP)) { result = parseJSONList(msg.postData, "comps") }
-			else if (msg.resource == REMOVE_PROXY) { result = parseJSONString(msg.postData, "proxies") }
+			else if (msg.resource == REMOVE_PROXY) { result = parseJSONString(msg.postData, "proxy") }
 			else if (msg.resource == ADD_PROXY) { result = parseJSONString(msg.postData, "exp") }
 			if (result != "") { result = new char[](msg.resource, " ", result) }
 		}

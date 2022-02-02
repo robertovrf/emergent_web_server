@@ -76,7 +76,7 @@ component provides App requires io.Output out, data.IntUtil iu, rest.RESys, io.I
 				out.print("learn> ")
 				rounds = iu.intFromString(in.readln())
 				int colTimeS = collectionTime/1000
-				dec timeLearn =  configsStr.arrayLength * colTimeS
+				dec timeLearn =  rounds * colTimeS
 				if (timeLearn > 60.0) {
 					timeLearn = timeLearn / 60.0
 					out.println("$(debugMSG) All setup. Learning will take at least $(du.decToString(timeLearn)) min.") 
@@ -111,15 +111,87 @@ component provides App requires io.Output out, data.IntUtil iu, rest.RESys, io.I
 		} else { out.println("$(debugMSG) Invalid command.") }
 	}
 
+	char[] getInfoArchitecture(char arch[]) {
+		char req[] = getRequest(arch)
+		char def[] = getGET(arch)
+		char cmp[] = getCMP(arch)
+		char ch[] = getCH(arch)
+		char result[] = null
+		if (req != null) {
+			result = new char[](req)
+		}
+		if (def != null) {
+			result = new char[](result, ", ", def)
+		}
+		if (cmp != null) {
+			result = new char[](result, ", ", cmp)
+		}
+		if (ch != null) {
+			result = new char[](result, ", ", ch)	
+		}
+		return result
+	}
+
+	char[] getRequest(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/request/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
+	char[] getGET(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/http/handler/GET/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
+	char[] getCMP(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/compression/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
+	char[] getCH(char arch[]) {
+		String compsList[] = strUtil.explode(strUtil.explode(arch, "|")[0].string, ",")
+		for (int pointer = 0; pointer < compsList.arrayLength; pointer++) {
+			if (strUtil.find(compsList[pointer].string, "../repository/cache/") != StringUtil.NOT_FOUND) {
+				String helper[] = strUtil.explode(compsList[pointer].string, "/")
+				return helper[helper.arrayLength-1].string
+			}
+		}
+		return null
+	}
+
 	void handlePerception(char perceptionData[], TextFile file) {
+		if (perceptionData == "{}") {
+			out.println("$(debugMSG) No perception data.")
+			return
+		}
+		char result[] = ""
+		dec value = 0
+		int count = 0
 		PerceptionData pD[] = encoder.jsonToArray(perceptionData, typeof(PerceptionData[]), null)
 		if (((pD != null) && (pD.arrayLength > 0)) && (pD[0].metrics.arrayLength > 0)) {
-			for (int i = 0; i < pD.arrayLength; i++) {
-				for (int j = 0; j < pD[i].metrics.arrayLength; j++) {
-					dec metricValue = pD[i].metrics[j].value / pD[i].metrics[j].counter
-					out.println("$(pD[i].metrics[j].name): $(du.decToString(metricValue)) - $(iu.intToString(pD[i].metrics[j].counter))")
-				}
-			}
+			result = new char[]("[ ", getInfoArchitecture(pD[0].config), " ] - ")
+			value = pD[0].metrics[0].value
+			count = pD[0].metrics[0].counter
+			dec metricValue = value/count
+			result = new char[](result, pD[0].metrics[0].name, ": ", du.decToString(metricValue), " ms")
+			out.println("$(debugMSG) $(result)")
 		} else {
 			out.println("$(debugMSG) No perception data.")
 		}
