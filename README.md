@@ -1,4 +1,4 @@
-# Emergent Web Server (EWS)
+# Emergent Web Server (EWS) [![DOI](https://zenodo.org/badge/213517358.svg)](https://zenodo.org/badge/latestdoi/213517358)
 
 EWS is an examplar to explore online learning in compositional self-adaptive systems. This repository contains all code required to execute and extend the examplar. We make available a ready-to-use Docker container on Docker Hub. We recommend following the instructions in the "Quick Start" section to quickly set up and execute EWS in a Docker container. We also describe the examplar folder structure, provide a guide on how to compile the different composing parts of the examplar and how to execute it on your machine settings. For more information on the concepts that make up our examplar, we refer the interested reader to check the paper that describes this artefact (**NOTE**: we'll add a link to the paper as soon as it gets published).
 
