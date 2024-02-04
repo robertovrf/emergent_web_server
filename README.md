@@ -146,8 +146,7 @@ More information at: https://github.com/EGAlberts/pyews
 
 Everything that happens to EWS in the Docker container is logged in 'emergent\_web\_server/pal/em.log'. Some of the commands to interact with EWS takes a while to conclude, giving the user the impression that the system has frozen. If that is the case, please check  'em.log' to see if the system threw any exceptions or error messages. Otherwise, it is probably just taking a while to finish executing the command.
 
-For any exceptions found in 'em.log', or for any other problem found in this artefact, please get in contact with us by sending an email to robertovito [at] ufg.br.
-
+For any exceptions found in 'em.log', or for any other problem found in this artefact, please get in contact with us by sending an email to roberto.filho [at] ufsc.br.
 
 Thank you very much for using our artefact.  
 
