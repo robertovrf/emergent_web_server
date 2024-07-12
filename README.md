@@ -101,7 +101,7 @@ The EWS project has the following folders: _Docker_, _make\_scripts_, _pal_, _py
 
 After cloning the EWS repository and installing its dependencies, the next step is to compile the project. We createdthe make.dn component to facilitate this task. 'make.dn' is a building tool that assist in compiling the entire project. This tool has a set of options and arguments that can be explored to compile EWS in different ways. The first thing we have to do is to compile 'make.dn', in the 'emergent\_web\_server' folder in a terminal type:
 
-_$ dana make.dn_
+_$ dnc make.dn_
 
 To execute 'make.dn' and get a menu of the options and arguments type:
 
